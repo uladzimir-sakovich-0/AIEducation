@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="../tests/FinanceTracker.UnitTests/FinanceTracker.UnitTests.csproj" />
+  <Project Path="FinanceTracker.API/FinanceTracker.API.csproj" />
+  <Project Path="FinanceTracker.DB/FinanceTracker.DB.csproj" />
+  <Project Path="FinanceTracker.Infrastructure/FinanceTracker.Infrastructure.csproj" />
+</Solution>
