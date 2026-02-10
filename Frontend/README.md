@@ -14,9 +14,18 @@ Vue.js 3 frontend application for the Finance Tracker.
 npm install
 ```
 
-2. Make sure the backend is running on http://localhost:5270
+2. Configure the API endpoint (optional):
 
-3. Start the development server:
+Create a `.env` file in the Frontend directory to customize the backend API URL:
+```
+VITE_API_BASE_URL=http://localhost:5270
+```
+
+The default value is `http://localhost:5270` if not specified.
+
+3. Make sure the backend is running on the configured URL
+
+4. Start the development server:
 ```bash
 npm run dev
 ```
@@ -28,6 +37,10 @@ The application will be available at http://localhost:3000
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
+
+## Environment Variables
+
+- `VITE_API_BASE_URL` - Backend API base URL (default: http://localhost:5270)
 
 ## Features
 
