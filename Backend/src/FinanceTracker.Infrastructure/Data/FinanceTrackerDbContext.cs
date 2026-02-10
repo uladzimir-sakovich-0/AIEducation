@@ -1,3 +1,4 @@
+using FinanceTracker.DB.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinanceTracker.Infrastructure.Data;
@@ -12,10 +13,61 @@ public class FinanceTrackerDbContext : DbContext
     {
     }
 
+    /// <summary>
+    /// Gets or sets the DbSet for Account entities
+    /// </summary>
+    public DbSet<Account> Accounts { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the DbSet for Category entities
+    /// </summary>
+    public DbSet<Category> Categories { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the DbSet for Transaction entities
+    /// </summary>
+    public DbSet<Transaction> Transactions { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Entity configurations will be added here
+        // Configure Account entity
+        modelBuilder.Entity<Account>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
+        });
+
+        // Configure Category entity
+        modelBuilder.Entity<Category>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+        });
+
+        // Configure Transaction entity
+        modelBuilder.Entity<Transaction>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Amount).HasColumnType("decimal(18,2)").IsRequired();
+            entity.Property(e => e.Timestamp).IsRequired().HasDefaultValueSql("NOW()");
+            entity.Property(e => e.Notes).HasMaxLength(500);
+
+            // Configure relationships
+            entity.HasOne(e => e.Account)
+                .WithMany(a => a.Transactions)
+                .HasForeignKey(e => e.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Category)
+                .WithMany(c => c.Transactions)
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
     }
 }
