@@ -28,6 +28,35 @@ public class FinanceTrackerDbContext : DbContext
     /// </summary>
     public DbSet<Transaction> Transactions { get; set; } = null!;
 
+    public override int SaveChanges()
+    {
+        SetTimestamps();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        SetTimestamps();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void SetTimestamps()
+    {
+        var entries = ChangeTracker.Entries();
+
+        foreach (var entry in entries)
+        {
+            if (entry.Entity is Account account && entry.State == EntityState.Added)
+            {
+                account.CreatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is Transaction transaction && entry.State == EntityState.Added)
+            {
+                transaction.Timestamp = DateTime.UtcNow;
+            }
+        }
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

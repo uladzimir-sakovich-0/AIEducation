@@ -37,7 +37,7 @@ public class Transaction
     /// Timestamp when the transaction occurred
     /// </summary>
     [Required]
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public DateTime Timestamp { get; set; }
 
     /// <summary>
     /// Foreign key to the category

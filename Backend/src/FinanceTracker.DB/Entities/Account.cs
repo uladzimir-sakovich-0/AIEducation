@@ -36,7 +36,7 @@ public class Account
     /// <summary>
     /// Timestamp when the account was created
     /// </summary>
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
 
     /// <summary>
     /// Navigation property for transactions associated with this account
