@@ -48,11 +48,19 @@ public class FinanceTrackerDbContext : DbContext
         {
             if (entry.Entity is Account account && entry.State == EntityState.Added)
             {
-                account.CreatedAt = DateTime.UtcNow;
+                // Only set if not already set (to allow explicit timestamp specification)
+                if (account.CreatedAt == default)
+                {
+                    account.CreatedAt = DateTime.UtcNow;
+                }
             }
             else if (entry.Entity is Transaction transaction && entry.State == EntityState.Added)
             {
-                transaction.Timestamp = DateTime.UtcNow;
+                // Only set if not already set (to allow explicit timestamp specification)
+                if (transaction.Timestamp == default)
+                {
+                    transaction.Timestamp = DateTime.UtcNow;
+                }
             }
         }
     }
@@ -69,6 +77,7 @@ public class FinanceTrackerDbContext : DbContext
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
             entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(255);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).IsRequired();
         });
 
         // Configure Category entity
