@@ -36,6 +36,7 @@ public class Account
     /// <summary>
     /// Timestamp when the account was created
     /// </summary>
+    [Required]
     public DateTime CreatedAt { get; set; }
 
     /// <summary>
