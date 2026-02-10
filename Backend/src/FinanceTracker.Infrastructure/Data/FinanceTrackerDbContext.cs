@@ -40,7 +40,6 @@ public class FinanceTrackerDbContext : DbContext
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
             entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(255);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
         });
 
         // Configure Category entity
@@ -55,7 +54,7 @@ public class FinanceTrackerDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Amount).HasColumnType("decimal(18,2)").IsRequired();
-            entity.Property(e => e.Timestamp).IsRequired().HasDefaultValueSql("NOW()");
+            entity.Property(e => e.Timestamp).IsRequired();
             entity.Property(e => e.Notes).HasMaxLength(500);
 
             // Configure relationships
