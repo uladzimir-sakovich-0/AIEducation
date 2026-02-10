@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FinanceTracker.DB.Entities;
 
 /// <summary>
-/// Represents a user account in the finance tracker system
+/// Represents a financial account (e.g., checking, savings, credit card)
 /// </summary>
 public class Account
 {
@@ -14,24 +15,37 @@ public class Account
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Email address of the account owner
+    /// Foreign key to the user who owns this account
     /// </summary>
     [Required]
-    [MaxLength(255)]
-    [EmailAddress]
-    public string Email { get; set; } = string.Empty;
+    public Guid UserId { get; set; }
 
     /// <summary>
-    /// Hashed password for account security
+    /// Navigation property to the user
+    /// </summary>
+    [ForeignKey(nameof(UserId))]
+    public User User { get; set; } = null!;
+
+    /// <summary>
+    /// Name of the account (e.g., "Main Checking", "Savings")
     /// </summary>
     [Required]
-    [MaxLength(255)]
-    public string PasswordHash { get; set; } = string.Empty;
+    [MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Indicates whether the account is active
+    /// Type of account (e.g., "Checking", "Savings", "Credit Card")
     /// </summary>
-    public bool IsActive { get; set; } = true;
+    [Required]
+    [MaxLength(50)]
+    public string AccountType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Current balance of the account
+    /// </summary>
+    [Required]
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal Balance { get; set; }
 
     /// <summary>
     /// Timestamp when the account was created

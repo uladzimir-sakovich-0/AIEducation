@@ -17,6 +17,33 @@ public class FinanceTrackerDbContextTests
     }
 
     [Fact]
+    public async Task WhenUserIsAdded_ThenCreatedAtIsSetAutomatically()
+    {
+        // Arrange
+        var options = CreateInMemoryOptions();
+        var beforeAdd = DateTime.UtcNow;
+
+        using (var context = new FinanceTrackerDbContext(options))
+        {
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "test@example.com",
+                PasswordHash = "hashed_password"
+            };
+
+            // Act
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            // Assert
+            var afterAdd = DateTime.UtcNow;
+            Assert.True(user.CreatedAt >= beforeAdd && user.CreatedAt <= afterAdd,
+                "CreatedAt should be set to current UTC time");
+        }
+    }
+
+    [Fact]
     public async Task WhenAccountIsAdded_ThenCreatedAtIsSetAutomatically()
     {
         // Arrange
@@ -25,14 +52,24 @@ public class FinanceTrackerDbContextTests
 
         using (var context = new FinanceTrackerDbContext(options))
         {
-            var account = new Account
+            var user = new User
             {
                 Id = Guid.NewGuid(),
                 Email = "test@example.com",
                 PasswordHash = "hashed_password"
             };
 
+            var account = new Account
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Name = "Main Checking",
+                AccountType = "Checking",
+                Balance = 1000.00m
+            };
+
             // Act
+            context.Users.Add(user);
             context.Accounts.Add(account);
             await context.SaveChangesAsync();
 
@@ -52,11 +89,20 @@ public class FinanceTrackerDbContextTests
 
         using (var context = new FinanceTrackerDbContext(options))
         {
-            var account = new Account
+            var user = new User
             {
                 Id = Guid.NewGuid(),
                 Email = "test@example.com",
                 PasswordHash = "hashed_password"
+            };
+
+            var account = new Account
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Name = "Main Checking",
+                AccountType = "Checking",
+                Balance = 1000.00m
             };
 
             var category = new Category
@@ -74,6 +120,7 @@ public class FinanceTrackerDbContextTests
             };
 
             // Act
+            context.Users.Add(user);
             context.Accounts.Add(account);
             context.Categories.Add(category);
             context.Transactions.Add(transaction);
@@ -87,7 +134,7 @@ public class FinanceTrackerDbContextTests
     }
 
     [Fact]
-    public async Task WhenAccountWithExistingCreatedAtIsAdded_ThenCreatedAtIsPreserved()
+    public async Task WhenUserWithExistingCreatedAtIsAdded_ThenCreatedAtIsPreserved()
     {
         // Arrange
         var options = CreateInMemoryOptions();
@@ -95,7 +142,7 @@ public class FinanceTrackerDbContextTests
 
         using (var context = new FinanceTrackerDbContext(options))
         {
-            var account = new Account
+            var user = new User
             {
                 Id = Guid.NewGuid(),
                 Email = "test@example.com",
@@ -104,6 +151,42 @@ public class FinanceTrackerDbContextTests
             };
 
             // Act
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            // Assert - The explicitly set CreatedAt should be preserved
+            Assert.Equal(specificDate, user.CreatedAt);
+        }
+    }
+
+    [Fact]
+    public async Task WhenAccountWithExistingCreatedAtIsAdded_ThenCreatedAtIsPreserved()
+    {
+        // Arrange
+        var options = CreateInMemoryOptions();
+        var specificDate = DateTime.UtcNow.AddDays(-5);
+
+        using (var context = new FinanceTrackerDbContext(options))
+        {
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "test@example.com",
+                PasswordHash = "hashed_password"
+            };
+
+            var account = new Account
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Name = "Savings",
+                AccountType = "Savings",
+                Balance = 500.00m,
+                CreatedAt = specificDate
+            };
+
+            // Act
+            context.Users.Add(user);
             context.Accounts.Add(account);
             await context.SaveChangesAsync();
 
@@ -121,11 +204,20 @@ public class FinanceTrackerDbContextTests
 
         using (var context = new FinanceTrackerDbContext(options))
         {
-            var account = new Account
+            var user = new User
             {
                 Id = Guid.NewGuid(),
                 Email = "test@example.com",
                 PasswordHash = "hashed_password"
+            };
+
+            var account = new Account
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Name = "Main Checking",
+                AccountType = "Checking",
+                Balance = 1000.00m
             };
 
             var category = new Category
@@ -144,6 +236,7 @@ public class FinanceTrackerDbContextTests
             };
 
             // Act
+            context.Users.Add(user);
             context.Accounts.Add(account);
             context.Categories.Add(category);
             context.Transactions.Add(transaction);

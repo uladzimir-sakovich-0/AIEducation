@@ -14,7 +14,12 @@ public class FinanceTrackerDbContext : DbContext
     }
 
     /// <summary>
-    /// Gets or sets the DbSet for Account entities
+    /// Gets or sets the DbSet for User entities
+    /// </summary>
+    public DbSet<User> Users { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the DbSet for Account entities (financial accounts)
     /// </summary>
     public DbSet<Account> Accounts { get; set; } = null!;
 
@@ -46,7 +51,15 @@ public class FinanceTrackerDbContext : DbContext
 
         foreach (var entry in entries)
         {
-            if (entry.Entity is Account account && entry.State == EntityState.Added)
+            if (entry.Entity is User user && entry.State == EntityState.Added)
+            {
+                // Only set if not already set (to allow explicit timestamp specification)
+                if (user.CreatedAt == default)
+                {
+                    user.CreatedAt = DateTime.UtcNow;
+                }
+            }
+            else if (entry.Entity is Account account && entry.State == EntityState.Added)
             {
                 // Only set if not already set (to allow explicit timestamp specification)
                 if (account.CreatedAt == default)
@@ -69,8 +82,8 @@ public class FinanceTrackerDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Configure Account entity
-        modelBuilder.Entity<Account>(entity =>
+        // Configure User entity
+        modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Email).IsUnique();
@@ -78,6 +91,22 @@ public class FinanceTrackerDbContext : DbContext
             entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(255);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.CreatedAt).IsRequired();
+        });
+
+        // Configure Account entity (financial account)
+        modelBuilder.Entity<Account>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.AccountType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Balance).HasColumnType("decimal(18,2)").IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            // Configure relationship with User
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.Accounts)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configure Category entity

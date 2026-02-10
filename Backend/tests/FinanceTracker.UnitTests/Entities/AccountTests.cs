@@ -3,7 +3,7 @@ using FinanceTracker.DB.Entities;
 namespace FinanceTracker.UnitTests.Entities;
 
 /// <summary>
-/// Tests for the Account entity
+/// Tests for the Account entity (financial account)
 /// </summary>
 public class AccountTests
 {
@@ -15,9 +15,10 @@ public class AccountTests
 
         // Assert
         Assert.Equal(Guid.Empty, account.Id);
-        Assert.Equal(string.Empty, account.Email);
-        Assert.Equal(string.Empty, account.PasswordHash);
-        Assert.True(account.IsActive);
+        Assert.Equal(Guid.Empty, account.UserId);
+        Assert.Equal(string.Empty, account.Name);
+        Assert.Equal(string.Empty, account.AccountType);
+        Assert.Equal(0m, account.Balance);
         Assert.NotNull(account.Transactions);
         Assert.Empty(account.Transactions);
     }
@@ -27,26 +28,29 @@ public class AccountTests
     {
         // Arrange
         var id = Guid.NewGuid();
-        var email = "test@example.com";
-        var passwordHash = "hashed_password";
-        var isActive = false;
+        var userId = Guid.NewGuid();
+        var name = "Main Checking";
+        var accountType = "Checking";
+        var balance = 1500.75m;
         var createdAt = DateTime.UtcNow;
 
         // Act
         var account = new Account
         {
             Id = id,
-            Email = email,
-            PasswordHash = passwordHash,
-            IsActive = isActive,
+            UserId = userId,
+            Name = name,
+            AccountType = accountType,
+            Balance = balance,
             CreatedAt = createdAt
         };
 
         // Assert
         Assert.Equal(id, account.Id);
-        Assert.Equal(email, account.Email);
-        Assert.Equal(passwordHash, account.PasswordHash);
-        Assert.Equal(isActive, account.IsActive);
+        Assert.Equal(userId, account.UserId);
+        Assert.Equal(name, account.Name);
+        Assert.Equal(accountType, account.AccountType);
+        Assert.Equal(balance, account.Balance);
         Assert.Equal(createdAt, account.CreatedAt);
     }
 
@@ -54,12 +58,18 @@ public class AccountTests
     public void WhenTransactionsAreAdded_ThenTheyAreAccessible()
     {
         // Arrange
-        var account = new Account { Id = Guid.NewGuid() };
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            UserId = Guid.NewGuid(),
+            Name = "Savings",
+            AccountType = "Savings"
+        };
         var transaction = new Transaction
         {
             Id = Guid.NewGuid(),
             AccountId = account.Id,
-            Amount = 100.50m,
+            Amount = 250.00m,
             CategoryId = Guid.NewGuid()
         };
 
@@ -69,5 +79,22 @@ public class AccountTests
         // Assert
         Assert.Single(account.Transactions);
         Assert.Contains(transaction, account.Transactions);
+    }
+
+    [Fact]
+    public void WhenNegativeBalance_ThenItIsStored()
+    {
+        // Arrange & Act
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            UserId = Guid.NewGuid(),
+            Name = "Credit Card",
+            AccountType = "Credit Card",
+            Balance = -500.00m
+        };
+
+        // Assert
+        Assert.Equal(-500.00m, account.Balance);
     }
 }
