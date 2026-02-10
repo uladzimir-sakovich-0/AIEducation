@@ -59,6 +59,11 @@ This workspace is an educational project: Personal Finance Tracker (Single Page 
 
 ## Key files & folders (expected)
 - README.md — project overview and usage
+- Docs/ — all project documentation files (put new documentation here)
 - src/ — frontend and backend source (separate folders per service)
 - docker/ or compose files — container orchestration
 - examples/ or demos/ — runnable example flows
+
+## Documentation guidelines
+- All new documentation files should be placed in the Docs/ folder
+- Keep only README.md in the root folder
