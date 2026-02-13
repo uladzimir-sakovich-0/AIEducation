@@ -15,6 +15,7 @@
           <h3>✓ Service is Healthy</h3>
           <p><strong>Status:</strong> {{ healthData.status }}</p>
           <p><strong>Timestamp:</strong> {{ formatTimestamp(healthData.timestamp) }}</p>
+          <p v-if="healthData.databaseVersion"><strong>Database Version:</strong> {{ healthData.databaseVersion }}</p>
         </div>
         
         <div v-if="error" class="health-result error">
