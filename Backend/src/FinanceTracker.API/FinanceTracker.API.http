@@ -5,3 +5,13 @@ GET {{FinanceTracker.API_HostAddress}}/api/health
 Accept: application/json
 
 ###
+# Create Category Endpoint
+POST {{FinanceTracker.API_HostAddress}}/api/categories
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "test"
+}
+
+###
