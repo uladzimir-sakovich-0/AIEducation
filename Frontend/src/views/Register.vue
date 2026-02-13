@@ -1,86 +1,81 @@
 <template>
-  <v-app>
-    <v-main>
-      <v-container fluid fill-height>
-        <v-row align="center" justify="center">
-          <v-col cols="12" sm="8" md="4">
-            <v-card class="elevation-12">
-              <v-card-title class="text-h5 text-center pa-6">
-                Create Account
-              </v-card-title>
-              <v-card-text>
-                <v-form @submit.prevent="handleRegister">
-                  <v-text-field
-                    v-model="email"
-                    label="Email"
-                    type="email"
-                    prepend-inner-icon="mdi-email"
-                    variant="outlined"
-                    required
-                  ></v-text-field>
-                  <v-text-field
-                    v-model="password"
-                    label="Password"
-                    type="password"
-                    prepend-inner-icon="mdi-lock"
-                    variant="outlined"
-                    required
-                  ></v-text-field>
-                  <v-text-field
-                    v-model="confirmPassword"
-                    label="Confirm Password"
-                    type="password"
-                    prepend-inner-icon="mdi-lock-check"
-                    variant="outlined"
-                    required
-                  ></v-text-field>
-                  <v-alert
-                    v-if="error"
-                    type="error"
-                    variant="tonal"
-                    class="mb-4"
-                  >
-                    {{ error }}
-                  </v-alert>
-                  <v-alert
-                    v-if="success"
-                    type="success"
-                    variant="tonal"
-                    class="mb-4"
-                  >
-                    {{ success }}
-                  </v-alert>
-                  <v-btn
-                    type="submit"
-                    color="primary"
-                    block
-                    size="large"
-                    :loading="loading"
-                  >
-                    Register
-                  </v-btn>
-                </v-form>
-              </v-card-text>
-              <v-card-actions class="justify-center pa-4">
-                <v-btn
-                  variant="text"
-                  color="primary"
-                  @click="$router.push('/login')"
-                >
-                  Already have an account? Login
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-container>
-    </v-main>
-  </v-app>
+  <AuthLayout>
+    <template #title>
+      Create Account
+    </template>
+    <template #content>
+      <v-form @submit.prevent="handleRegister">
+        <v-text-field
+          v-model="email"
+          label="Email"
+          type="email"
+          prepend-inner-icon="mdi-email"
+          variant="outlined"
+          required
+        ></v-text-field>
+        <v-text-field
+          v-model="password"
+          label="Password"
+          type="password"
+          prepend-inner-icon="mdi-lock"
+          variant="outlined"
+          required
+        ></v-text-field>
+        <v-text-field
+          v-model="confirmPassword"
+          label="Confirm Password"
+          type="password"
+          prepend-inner-icon="mdi-lock-check"
+          variant="outlined"
+          required
+        ></v-text-field>
+        <v-alert
+          v-if="error"
+          type="error"
+          variant="tonal"
+          class="mb-4"
+        >
+          {{ error }}
+        </v-alert>
+        <v-alert
+          v-if="success"
+          type="success"
+          variant="tonal"
+          class="mb-4"
+        >
+          {{ success }}
+        </v-alert>
+        <v-btn
+          type="submit"
+          color="primary"
+          block
+          size="large"
+          :loading="loading"
+        >
+          Register
+        </v-btn>
+      </v-form>
+    </template>
+    <template #actions>
+      <v-btn
+        variant="text"
+        color="primary"
+        @click="$router.push('/login')"
+      >
+        Already have an account? Login
+      </v-btn>
+    </template>
+  </AuthLayout>
 </template>
 
 <script>
+import AuthLayout from '../components/AuthLayout.vue'
+
 export default {
   name: 'Register',
+  components: {
+    AuthLayout
+  },
   data() {
     return {
       email: '',
