@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using FinanceTracker.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace FinanceTracker.API.Controllers;
 
@@ -28,8 +29,18 @@ public class HealthController : ControllerBase
         string? version = null;
         try
         {
-            // Query PostgreSQL version - this will work for PostgreSQL but not InMemory database
-            version = await _context.Database.SqlQueryRaw<string>("SELECT version()").FirstOrDefaultAsync();
+            // Query PostgreSQL version using raw connection
+            var connection = _context.Database.GetDbConnection();
+            await connection.OpenAsync();
+            
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT version()";
+                var result = await command.ExecuteScalarAsync();
+                version = result?.ToString();
+            }
+            
+            await connection.CloseAsync();
         }
         catch
         {
