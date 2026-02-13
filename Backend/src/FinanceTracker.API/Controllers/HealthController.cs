@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using FinanceTracker.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace FinanceTracker.API.Controllers;
 
@@ -13,10 +12,12 @@ namespace FinanceTracker.API.Controllers;
 public class HealthController : ControllerBase
 {
     private readonly FinanceTrackerDbContext _context;
+    private readonly ILogger<HealthController> _logger;
 
-    public HealthController(FinanceTrackerDbContext context)
+    public HealthController(FinanceTrackerDbContext context, ILogger<HealthController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     /// <summary>
@@ -31,20 +32,30 @@ public class HealthController : ControllerBase
         {
             // Query PostgreSQL version using raw connection
             var connection = _context.Database.GetDbConnection();
-            await connection.OpenAsync();
             
-            using (var command = connection.CreateCommand())
+            try
             {
-                command.CommandText = "SELECT version()";
-                var result = await command.ExecuteScalarAsync();
-                version = result?.ToString();
+                await connection.OpenAsync();
+                
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT version()";
+                    var result = await command.ExecuteScalarAsync();
+                    version = result?.ToString();
+                }
             }
-            
-            await connection.CloseAsync();
+            finally
+            {
+                if (connection.State == System.Data.ConnectionState.Open)
+                {
+                    await connection.CloseAsync();
+                }
+            }
         }
-        catch
+        catch (Exception ex)
         {
-            // If database query fails (e.g., InMemory database in tests), use "Unknown"
+            // Log the exception for debugging purposes
+            _logger.LogWarning(ex, "Failed to query database version. Using 'Unknown' as fallback.");
             version = "Unknown";
         }
         

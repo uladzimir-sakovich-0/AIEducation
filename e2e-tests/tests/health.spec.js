@@ -16,12 +16,9 @@ test.describe('Finance Tracker Health Check', () => {
     const checkButton = page.locator('button:has-text("Check Health")');
     await expect(checkButton).toBeVisible();
     
-    // Wait a bit for initial health check (runs on mount)
-    await page.waitForTimeout(2000);
-
-    // Check if health result is visible
+    // Wait for health result to appear (automatically runs on mount)
     const healthResult = page.locator('.health-result.success');
-    await expect(healthResult).toBeVisible();
+    await expect(healthResult).toBeVisible({ timeout: 10000 });
 
     // Verify the status is "Healthy"
     const statusText = healthResult.locator('p:has-text("Status:")');
@@ -43,12 +40,9 @@ test.describe('Finance Tracker Health Check', () => {
     // Wait for the page to load
     await page.waitForLoadState('networkidle');
 
-    // Wait for initial health check
-    await page.waitForTimeout(2000);
-
-    // Check if health result is visible
+    // Wait for health result to appear
     const healthResult = page.locator('.health-result.success');
-    await expect(healthResult).toBeVisible();
+    await expect(healthResult).toBeVisible({ timeout: 10000 });
 
     // Verify that timestamp is displayed
     const timestampText = healthResult.locator('p:has-text("Timestamp:")');

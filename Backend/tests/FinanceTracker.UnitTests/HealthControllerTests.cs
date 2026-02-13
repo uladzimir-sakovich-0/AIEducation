@@ -2,6 +2,8 @@ using FinanceTracker.API.Controllers;
 using FinanceTracker.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace FinanceTracker.UnitTests;
 
@@ -19,12 +21,18 @@ public class HealthControllerTests
         return new FinanceTrackerDbContext(options);
     }
 
+    private ILogger<HealthController> GetMockLogger()
+    {
+        return new Mock<ILogger<HealthController>>().Object;
+    }
+
     [Fact]
     public async Task WhenHealthCheckIsRequested_ThenReturnsOkResult()
     {
         // Arrange
         using var context = GetInMemoryDbContext();
-        var controller = new HealthController(context);
+        var logger = GetMockLogger();
+        var controller = new HealthController(context, logger);
 
         // Act
         var result = await controller.Get();
@@ -38,7 +46,8 @@ public class HealthControllerTests
     {
         // Arrange
         using var context = GetInMemoryDbContext();
-        var controller = new HealthController(context);
+        var logger = GetMockLogger();
+        var controller = new HealthController(context, logger);
 
         // Act
         var result = await controller.Get() as OkObjectResult;
@@ -59,7 +68,8 @@ public class HealthControllerTests
     {
         // Arrange
         using var context = GetInMemoryDbContext();
-        var controller = new HealthController(context);
+        var logger = GetMockLogger();
+        var controller = new HealthController(context, logger);
         var beforeCall = DateTime.UtcNow;
 
         // Act
@@ -87,7 +97,8 @@ public class HealthControllerTests
     {
         // Arrange
         using var context = GetInMemoryDbContext();
-        var controller = new HealthController(context);
+        var logger = GetMockLogger();
+        var controller = new HealthController(context, logger);
 
         // Act
         var result = await controller.Get() as OkObjectResult;
