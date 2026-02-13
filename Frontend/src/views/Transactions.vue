@@ -146,7 +146,12 @@ export default {
       if (this.editMode) {
         const index = this.transactions.findIndex(t => t.id === this.editingId)
         if (index !== -1) {
-          this.transactions[index] = { ...this.formData, id: this.editingId }
+          const originalTransaction = this.transactions[index]
+          this.transactions[index] = { 
+            ...this.formData, 
+            id: this.editingId,
+            timestamp: originalTransaction.timestamp
+          }
         }
       } else {
         this.transactions.push({

@@ -136,7 +136,12 @@ export default {
       if (this.editMode) {
         const index = this.accounts.findIndex(a => a.id === this.editingId)
         if (index !== -1) {
-          this.accounts[index] = { ...this.formData, id: this.editingId }
+          const originalAccount = this.accounts[index]
+          this.accounts[index] = { 
+            ...this.formData, 
+            id: this.editingId,
+            createdAt: originalAccount.createdAt
+          }
         }
       } else {
         this.accounts.push({
