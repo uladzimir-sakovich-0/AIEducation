@@ -1,5 +1,8 @@
 using FinanceTracker.Infrastructure.Data;
+using FinanceTracker.Infrastructure.Repositories;
 using FinanceTracker.Infrastructure.Services;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +16,12 @@ builder.Services.AddDbContext<FinanceTrackerDbContext>(options =>
 
 // Register application services
 builder.Services.AddScoped<IHealthService, HealthService>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+// Add FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddFluentValidationAutoValidation();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
