@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using FinanceTracker.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
+using FinanceTracker.Infrastructure.Services;
 
 namespace FinanceTracker.API.Controllers;
 
@@ -11,13 +10,11 @@ namespace FinanceTracker.API.Controllers;
 [Route("api/[controller]")]
 public class HealthController : ControllerBase
 {
-    private readonly FinanceTrackerDbContext _context;
-    private readonly ILogger<HealthController> _logger;
+    private readonly IHealthService _healthService;
 
-    public HealthController(FinanceTrackerDbContext context, ILogger<HealthController> logger)
+    public HealthController(IHealthService healthService)
     {
-        _context = context;
-        _logger = logger;
+        _healthService = healthService;
     }
 
     /// <summary>
@@ -27,43 +24,13 @@ public class HealthController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        string? version = null;
-        try
-        {
-            // Query PostgreSQL version using raw connection
-            var connection = _context.Database.GetDbConnection();
-            
-            try
-            {
-                await connection.OpenAsync();
-                
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT version()";
-                    var result = await command.ExecuteScalarAsync();
-                    version = result?.ToString();
-                }
-            }
-            finally
-            {
-                if (connection.State == System.Data.ConnectionState.Open)
-                {
-                    await connection.CloseAsync();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            // Log the exception for debugging purposes
-            _logger.LogWarning(ex, "Failed to query database version. Using 'Unknown' as fallback.");
-            version = "Unknown";
-        }
+        var healthResult = await _healthService.CheckHealthAsync();
         
         return Ok(new 
         { 
-            status = "Healthy", 
-            timestamp = DateTime.UtcNow,
-            databaseVersion = version ?? "Unknown"
+            status = healthResult.IsHealthy ? "Healthy" : "Unhealthy", 
+            timestamp = healthResult.Timestamp,
+            databaseVersion = healthResult.DatabaseVersion ?? "Unknown"
         });
     }
 }

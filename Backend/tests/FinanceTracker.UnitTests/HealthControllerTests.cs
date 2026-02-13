@@ -1,8 +1,6 @@
 using FinanceTracker.API.Controllers;
-using FinanceTracker.Infrastructure.Data;
+using FinanceTracker.Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace FinanceTracker.UnitTests;
@@ -12,27 +10,25 @@ namespace FinanceTracker.UnitTests;
 /// </summary>
 public class HealthControllerTests
 {
-    private FinanceTrackerDbContext GetInMemoryDbContext()
+    private Mock<IHealthService> GetMockHealthService()
     {
-        var options = new DbContextOptionsBuilder<FinanceTrackerDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        
-        return new FinanceTrackerDbContext(options);
-    }
-
-    private ILogger<HealthController> GetMockLogger()
-    {
-        return new Mock<ILogger<HealthController>>().Object;
+        return new Mock<IHealthService>();
     }
 
     [Fact]
     public async Task WhenHealthCheckIsRequested_ThenReturnsOkResult()
     {
         // Arrange
-        using var context = GetInMemoryDbContext();
-        var logger = GetMockLogger();
-        var controller = new HealthController(context, logger);
+        var mockHealthService = GetMockHealthService();
+        mockHealthService.Setup(s => s.CheckHealthAsync())
+            .ReturnsAsync(new HealthCheckResult
+            {
+                IsHealthy = true,
+                Timestamp = DateTime.UtcNow,
+                DatabaseVersion = "PostgreSQL 16.12"
+            });
+        
+        var controller = new HealthController(mockHealthService.Object);
 
         // Act
         var result = await controller.Get();
@@ -45,9 +41,16 @@ public class HealthControllerTests
     public async Task WhenHealthCheckIsRequested_ThenReturnsHealthyStatus()
     {
         // Arrange
-        using var context = GetInMemoryDbContext();
-        var logger = GetMockLogger();
-        var controller = new HealthController(context, logger);
+        var mockHealthService = GetMockHealthService();
+        mockHealthService.Setup(s => s.CheckHealthAsync())
+            .ReturnsAsync(new HealthCheckResult
+            {
+                IsHealthy = true,
+                Timestamp = DateTime.UtcNow,
+                DatabaseVersion = "PostgreSQL 16.12"
+            });
+        
+        var controller = new HealthController(mockHealthService.Object);
 
         // Act
         var result = await controller.Get() as OkObjectResult;
@@ -67,10 +70,18 @@ public class HealthControllerTests
     public async Task WhenHealthCheckIsRequested_ThenReturnsTimestamp()
     {
         // Arrange
-        using var context = GetInMemoryDbContext();
-        var logger = GetMockLogger();
-        var controller = new HealthController(context, logger);
+        var mockHealthService = GetMockHealthService();
         var beforeCall = DateTime.UtcNow;
+        
+        mockHealthService.Setup(s => s.CheckHealthAsync())
+            .ReturnsAsync(new HealthCheckResult
+            {
+                IsHealthy = true,
+                Timestamp = DateTime.UtcNow,
+                DatabaseVersion = "PostgreSQL 16.12"
+            });
+        
+        var controller = new HealthController(mockHealthService.Object);
 
         // Act
         var result = await controller.Get() as OkObjectResult;
@@ -96,9 +107,16 @@ public class HealthControllerTests
     public async Task WhenHealthCheckIsRequested_ThenReturnsDatabaseVersion()
     {
         // Arrange
-        using var context = GetInMemoryDbContext();
-        var logger = GetMockLogger();
-        var controller = new HealthController(context, logger);
+        var mockHealthService = GetMockHealthService();
+        mockHealthService.Setup(s => s.CheckHealthAsync())
+            .ReturnsAsync(new HealthCheckResult
+            {
+                IsHealthy = true,
+                Timestamp = DateTime.UtcNow,
+                DatabaseVersion = "PostgreSQL 16.12"
+            });
+        
+        var controller = new HealthController(mockHealthService.Object);
 
         // Act
         var result = await controller.Get() as OkObjectResult;
@@ -114,5 +132,34 @@ public class HealthControllerTests
         
         var databaseVersion = databaseVersionProperty.GetValue(response);
         Assert.NotNull(databaseVersion);
+    }
+
+    [Fact]
+    public async Task WhenHealthCheckReturnsUnhealthy_ThenReturnsUnhealthyStatus()
+    {
+        // Arrange
+        var mockHealthService = GetMockHealthService();
+        mockHealthService.Setup(s => s.CheckHealthAsync())
+            .ReturnsAsync(new HealthCheckResult
+            {
+                IsHealthy = false,
+                Timestamp = DateTime.UtcNow,
+                DatabaseVersion = "Unknown"
+            });
+        
+        var controller = new HealthController(mockHealthService.Object);
+
+        // Act
+        var result = await controller.Get() as OkObjectResult;
+
+        // Assert
+        Assert.NotNull(result);
+        var response = result.Value;
+        Assert.NotNull(response);
+        
+        // Verify response has status property with "Unhealthy" value
+        var statusProperty = response.GetType().GetProperty("status");
+        Assert.NotNull(statusProperty);
+        Assert.Equal("Unhealthy", statusProperty.GetValue(response));
     }
 }

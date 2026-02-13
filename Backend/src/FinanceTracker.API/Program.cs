@@ -1,4 +1,5 @@
 using FinanceTracker.Infrastructure.Data;
+using FinanceTracker.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<FinanceTrackerDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+// Register application services
+builder.Services.AddScoped<IHealthService, HealthService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
