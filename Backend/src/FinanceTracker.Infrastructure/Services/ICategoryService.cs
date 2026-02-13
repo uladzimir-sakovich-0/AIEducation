@@ -1,3 +1,5 @@
+using FinanceTracker.Infrastructure.Models.Requests;
+
 namespace FinanceTracker.Infrastructure.Services;
 
 /// <summary>
@@ -8,8 +10,8 @@ public interface ICategoryService
     /// <summary>
     /// Creates a new category
     /// </summary>
-    /// <param name="name">Name of the category</param>
+    /// <param name="request">Category creation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The ID of the created category</returns>
-    Task<Guid> CreateCategoryAsync(string name, CancellationToken cancellationToken = default);
+    Task<Guid> CreateCategoryAsync(CategoryCreateRequest request, CancellationToken cancellationToken = default);
 }

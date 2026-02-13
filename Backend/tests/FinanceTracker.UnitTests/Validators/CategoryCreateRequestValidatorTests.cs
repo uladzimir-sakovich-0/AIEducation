@@ -1,5 +1,5 @@
-using FinanceTracker.API.Models.Requests;
 using FinanceTracker.API.Validators;
+using FinanceTracker.Infrastructure.Models.Requests;
 using FluentValidation.TestHelper;
 
 namespace FinanceTracker.UnitTests.Validators;

@@ -1,4 +1,5 @@
 using FinanceTracker.DB.Entities;
+using FinanceTracker.Infrastructure.Models.Requests;
 using FinanceTracker.Infrastructure.Repositories;
 using FinanceTracker.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
@@ -33,8 +34,10 @@ public class CategoryServiceTests
             .Setup(r => r.CreateAsync(It.IsAny<Category>(), default))
             .ReturnsAsync((Category c, CancellationToken ct) => c);
 
+        var request = new CategoryCreateRequest { Name = "Food" };
+
         // Act
-        await service.CreateCategoryAsync("Food", default);
+        await service.CreateCategoryAsync(request, default);
 
         // Assert
         mockRepository.Verify(
@@ -61,8 +64,10 @@ public class CategoryServiceTests
                 return c;
             });
 
+        var request = new CategoryCreateRequest { Name = "Transportation" };
+
         // Act
-        var result = await service.CreateCategoryAsync("Transportation", default);
+        var result = await service.CreateCategoryAsync(request, default);
 
         // Assert
         Assert.Equal(expectedId, result);
@@ -80,8 +85,10 @@ public class CategoryServiceTests
             .Setup(r => r.CreateAsync(It.IsAny<Category>(), default))
             .ReturnsAsync((Category c, CancellationToken ct) => c);
 
+        var request = new CategoryCreateRequest { Name = "Housing" };
+
         // Act
-        var result = await service.CreateCategoryAsync("Housing", default);
+        var result = await service.CreateCategoryAsync(request, default);
 
         // Assert
         Assert.NotEqual(Guid.Empty, result);
@@ -99,8 +106,10 @@ public class CategoryServiceTests
             .Setup(r => r.CreateAsync(It.IsAny<Category>(), default))
             .ReturnsAsync((Category c, CancellationToken ct) => c);
 
+        var request = new CategoryCreateRequest { Name = "Entertainment" };
+
         // Act
-        await service.CreateCategoryAsync("Entertainment", default);
+        await service.CreateCategoryAsync(request, default);
 
         // Assert
         mockLogger.Verify(
@@ -125,9 +134,12 @@ public class CategoryServiceTests
             .Setup(r => r.CreateAsync(It.IsAny<Category>(), default))
             .ReturnsAsync((Category c, CancellationToken ct) => c);
 
+        var request1 = new CategoryCreateRequest { Name = "Food" };
+        var request2 = new CategoryCreateRequest { Name = "Housing" };
+
         // Act
-        var result1 = await service.CreateCategoryAsync("Food", default);
-        var result2 = await service.CreateCategoryAsync("Housing", default);
+        var result1 = await service.CreateCategoryAsync(request1, default);
+        var result2 = await service.CreateCategoryAsync(request2, default);
 
         // Assert
         Assert.NotEqual(result1, result2);

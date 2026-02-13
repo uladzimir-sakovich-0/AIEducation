@@ -1,5 +1,5 @@
 using FinanceTracker.API.Controllers;
-using FinanceTracker.API.Models.Requests;
+using FinanceTracker.Infrastructure.Models.Requests;
 using FinanceTracker.Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -32,7 +32,7 @@ public class CategoriesControllerTests
         
         var categoryId = Guid.NewGuid();
         mockService
-            .Setup(s => s.CreateCategoryAsync(It.IsAny<string>(), default))
+            .Setup(s => s.CreateCategoryAsync(It.IsAny<CategoryCreateRequest>(), default))
             .ReturnsAsync(categoryId);
         
         var request = new CategoryCreateRequest { Name = "Food" };
@@ -54,7 +54,7 @@ public class CategoriesControllerTests
         
         var categoryId = Guid.NewGuid();
         mockService
-            .Setup(s => s.CreateCategoryAsync(It.IsAny<string>(), default))
+            .Setup(s => s.CreateCategoryAsync(It.IsAny<CategoryCreateRequest>(), default))
             .ReturnsAsync(categoryId);
         
         var request = new CategoryCreateRequest { Name = "Transportation" };
@@ -68,7 +68,7 @@ public class CategoriesControllerTests
     }
 
     [Fact]
-    public async Task WhenCreatingCategory_ThenServiceIsCalledWithCorrectName()
+    public async Task WhenCreatingCategory_ThenServiceIsCalledWithCorrectRequest()
     {
         // Arrange
         var mockService = GetMockCategoryService();
@@ -77,7 +77,7 @@ public class CategoriesControllerTests
         
         var categoryId = Guid.NewGuid();
         mockService
-            .Setup(s => s.CreateCategoryAsync("Housing", default))
+            .Setup(s => s.CreateCategoryAsync(It.IsAny<CategoryCreateRequest>(), default))
             .ReturnsAsync(categoryId);
         
         var request = new CategoryCreateRequest { Name = "Housing" };
@@ -87,7 +87,9 @@ public class CategoriesControllerTests
 
         // Assert
         mockService.Verify(
-            s => s.CreateCategoryAsync("Housing", default),
+            s => s.CreateCategoryAsync(
+                It.Is<CategoryCreateRequest>(r => r.Name == "Housing"), 
+                default),
             Times.Once);
     }
 
@@ -101,7 +103,7 @@ public class CategoriesControllerTests
         
         var categoryId = Guid.NewGuid();
         mockService
-            .Setup(s => s.CreateCategoryAsync(It.IsAny<string>(), default))
+            .Setup(s => s.CreateCategoryAsync(It.IsAny<CategoryCreateRequest>(), default))
             .ReturnsAsync(categoryId);
         
         var request = new CategoryCreateRequest { Name = "Entertainment" };
@@ -130,7 +132,7 @@ public class CategoriesControllerTests
         
         var categoryId = Guid.NewGuid();
         mockService
-            .Setup(s => s.CreateCategoryAsync(It.IsAny<string>(), default))
+            .Setup(s => s.CreateCategoryAsync(It.IsAny<CategoryCreateRequest>(), default))
             .ReturnsAsync(categoryId);
         
         var request = new CategoryCreateRequest { Name = "Utilities" };

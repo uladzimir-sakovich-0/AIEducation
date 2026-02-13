@@ -1,4 +1,5 @@
 using FinanceTracker.DB.Entities;
+using FinanceTracker.Infrastructure.Models.Requests;
 using FinanceTracker.Infrastructure.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -21,23 +22,33 @@ public class CategoryService : ICategoryService
     /// <summary>
     /// Creates a new category
     /// </summary>
-    /// <param name="name">Name of the category</param>
+    /// <param name="request">Category creation request</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The ID of the created category</returns>
-    public async Task<Guid> CreateCategoryAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<Guid> CreateCategoryAsync(CategoryCreateRequest request, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Creating category with name: {CategoryName}", name);
+        _logger.LogInformation("Creating category with name: {CategoryName}", request.Name);
         
-        var category = new Category
-        {
-            Id = Guid.NewGuid(),
-            Name = name
-        };
+        var category = MapToEntity(request);
 
         var createdCategory = await _repository.CreateAsync(category, cancellationToken);
         
         _logger.LogInformation("Category created with ID: {CategoryId}", createdCategory.Id);
         
         return createdCategory.Id;
+    }
+
+    /// <summary>
+    /// Maps CategoryCreateRequest to Category entity
+    /// </summary>
+    /// <param name="request">The request model</param>
+    /// <returns>Category entity</returns>
+    private Category MapToEntity(CategoryCreateRequest request)
+    {
+        return new Category
+        {
+            Id = Guid.NewGuid(),
+            Name = request.Name
+        };
     }
 }

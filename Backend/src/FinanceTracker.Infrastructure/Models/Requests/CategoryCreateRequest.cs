@@ -1,4 +1,4 @@
-namespace FinanceTracker.API.Models.Requests;
+namespace FinanceTracker.Infrastructure.Models.Requests;
 
 /// <summary>
 /// Request model for creating a new category

@@ -1,4 +1,4 @@
-using FinanceTracker.API.Models.Requests;
+using FinanceTracker.Infrastructure.Models.Requests;
 using FinanceTracker.Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -35,7 +35,7 @@ public class CategoriesController : ControllerBase
     {
         _logger.LogInformation("Received request to create category with name: {CategoryName}", request.Name);
         
-        var categoryId = await _categoryService.CreateCategoryAsync(request.Name, cancellationToken);
+        var categoryId = await _categoryService.CreateCategoryAsync(request, cancellationToken);
         
         _logger.LogInformation("Category created successfully with ID: {CategoryId}", categoryId);
         
