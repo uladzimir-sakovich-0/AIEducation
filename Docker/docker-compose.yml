@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: financetracker-postgres
+    environment:
+      POSTGRES_DB: financetracker
+      POSTGRES_USER: financetracker
+      POSTGRES_PASSWORD: financetracker
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      # Persist database data
+      - postgres_data:/var/lib/postgresql/data
+      # Optional: mount initialization scripts
+      # - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - financetracker-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U financetracker -d financetracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  financetracker-network:
+    driver: bridge
