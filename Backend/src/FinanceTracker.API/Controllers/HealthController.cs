@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using FinanceTracker.Infrastructure.Services;
 
 namespace FinanceTracker.API.Controllers;
 
@@ -9,13 +10,27 @@ namespace FinanceTracker.API.Controllers;
 [Route("api/[controller]")]
 public class HealthController : ControllerBase
 {
+    private readonly IHealthService _healthService;
+
+    public HealthController(IHealthService healthService)
+    {
+        _healthService = healthService;
+    }
+
     /// <summary>
     /// Health check endpoint
     /// </summary>
     /// <returns>200 OK if the service is running</returns>
     [HttpGet]
-    public IActionResult Get()
+    public async Task<IActionResult> Get()
     {
-        return Ok(new { status = "Healthy", timestamp = DateTime.UtcNow });
+        var healthResult = await _healthService.CheckHealthAsync();
+        
+        return Ok(new 
+        { 
+            status = healthResult.IsHealthy ? "Healthy" : "Unhealthy", 
+            timestamp = healthResult.Timestamp,
+            databaseVersion = healthResult.DatabaseVersion ?? "Unknown"
+        });
     }
 }
