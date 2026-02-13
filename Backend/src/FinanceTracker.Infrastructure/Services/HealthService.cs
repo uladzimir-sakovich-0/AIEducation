@@ -58,6 +58,7 @@ public class HealthService : IHealthService
         {
             // Log the exception for debugging purposes
             _logger.LogWarning(ex, "Failed to query database version. Using 'Unknown' as fallback.");
+            result.IsHealthy = false;
             result.DatabaseVersion = "Unknown";
         }
 

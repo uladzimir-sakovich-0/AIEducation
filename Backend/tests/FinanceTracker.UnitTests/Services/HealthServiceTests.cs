@@ -26,7 +26,7 @@ public class HealthServiceTests
     }
 
     [Fact]
-    public async Task WhenCheckHealthAsync_ThenReturnsHealthyResult()
+    public async Task WhenCheckHealthAsync_WithInMemoryDatabase_ThenReturnsUnhealthyResult()
     {
         // Arrange
         using var context = GetInMemoryDbContext();
@@ -38,7 +38,8 @@ public class HealthServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.True(result.IsHealthy);
+        // InMemory database doesn't support raw SQL queries, so health check will fail
+        Assert.False(result.IsHealthy);
     }
 
     [Fact]
@@ -90,6 +91,25 @@ public class HealthServiceTests
         // Assert
         Assert.NotNull(result);
         // InMemory database will fail the version query, so it should return "Unknown"
+        Assert.Equal("Unknown", result.DatabaseVersion);
+        // And IsHealthy should be false due to the exception
+        Assert.False(result.IsHealthy);
+    }
+
+    [Fact]
+    public async Task WhenDatabaseQueryFails_ThenIsHealthyIsFalse()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var service = new HealthService(context, logger);
+
+        // Act
+        var result = await service.CheckHealthAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.False(result.IsHealthy);
         Assert.Equal("Unknown", result.DatabaseVersion);
     }
 }
