@@ -15,3 +15,14 @@ Accept: application/json
 }
 
 ###
+# Update Category Endpoint
+PUT {{FinanceTracker.API_HostAddress}}/api/categories
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "name": "updated test"
+}
+
+###

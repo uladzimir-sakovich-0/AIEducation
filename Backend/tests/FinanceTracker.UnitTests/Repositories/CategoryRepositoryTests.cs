@@ -123,4 +123,106 @@ public class CategoryRepositoryTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task WhenUpdatingCategory_ThenCategoryIsUpdatedInDatabase()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var repository = new CategoryRepository(context, logger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        var category = new Category
+        {
+            Id = categoryId,
+            Name = "Food"
+        };
+        
+        await repository.CreateAsync(category);
+
+        // Act
+        var updatedCategory = new Category
+        {
+            Id = categoryId,
+            Name = "Updated Food"
+        };
+        var result = await repository.UpdateAsync(updatedCategory);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(categoryId, result.Id);
+        Assert.Equal("Updated Food", result.Name);
+        
+        // Verify it was actually updated in the database
+        var savedCategory = await context.Categories.FindAsync(categoryId);
+        Assert.NotNull(savedCategory);
+        Assert.Equal("Updated Food", savedCategory.Name);
+    }
+
+    [Fact]
+    public async Task WhenUpdatingCategory_ThenOnlyTargetCategoryIsModified()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var repository = new CategoryRepository(context, logger.Object);
+        
+        var category1Id = Guid.NewGuid();
+        var category2Id = Guid.NewGuid();
+        
+        await repository.CreateAsync(new Category { Id = category1Id, Name = "Category1" });
+        await repository.CreateAsync(new Category { Id = category2Id, Name = "Category2" });
+
+        // Act
+        var updatedCategory = new Category
+        {
+            Id = category1Id,
+            Name = "Updated Category1"
+        };
+        await repository.UpdateAsync(updatedCategory);
+
+        // Assert
+        var category1 = await context.Categories.FindAsync(category1Id);
+        var category2 = await context.Categories.FindAsync(category2Id);
+        
+        Assert.Equal("Updated Category1", category1!.Name);
+        Assert.Equal("Category2", category2!.Name);
+    }
+
+    [Fact]
+    public async Task WhenUpdatingCategory_ThenLogsInformation()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var repository = new CategoryRepository(context, logger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        var category = new Category
+        {
+            Id = categoryId,
+            Name = "Food"
+        };
+        
+        await repository.CreateAsync(category);
+
+        // Act
+        var updatedCategory = new Category
+        {
+            Id = categoryId,
+            Name = "Updated Food"
+        };
+        await repository.UpdateAsync(updatedCategory);
+
+        // Assert
+        logger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Updating category")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
 }

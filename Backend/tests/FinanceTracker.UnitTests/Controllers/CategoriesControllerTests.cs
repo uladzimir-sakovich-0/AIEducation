@@ -144,4 +144,81 @@ public class CategoriesControllerTests
         Assert.NotNull(result);
         Assert.Equal(nameof(CategoriesController.CreateCategory), result.ActionName);
     }
+
+    [Fact]
+    public async Task WhenUpdatingCategory_ThenReturnsOkResult()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockService
+            .Setup(s => s.UpdateCategoryAsync(It.IsAny<CategoryUpdateRequest>(), default))
+            .Returns(Task.CompletedTask);
+        
+        var request = new CategoryUpdateRequest { Id = categoryId, Name = "Updated Food" };
+
+        // Act
+        var result = await controller.UpdateCategory(request, default);
+
+        // Assert
+        Assert.IsType<OkResult>(result);
+    }
+
+    [Fact]
+    public async Task WhenUpdatingCategory_ThenServiceIsCalledWithCorrectRequest()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockService
+            .Setup(s => s.UpdateCategoryAsync(It.IsAny<CategoryUpdateRequest>(), default))
+            .Returns(Task.CompletedTask);
+        
+        var request = new CategoryUpdateRequest { Id = categoryId, Name = "Updated Transportation" };
+
+        // Act
+        await controller.UpdateCategory(request, default);
+
+        // Assert
+        mockService.Verify(
+            s => s.UpdateCategoryAsync(
+                It.Is<CategoryUpdateRequest>(r => r.Id == categoryId && r.Name == "Updated Transportation"), 
+                default),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenUpdatingCategory_ThenLogsInformation()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockService
+            .Setup(s => s.UpdateCategoryAsync(It.IsAny<CategoryUpdateRequest>(), default))
+            .Returns(Task.CompletedTask);
+        
+        var request = new CategoryUpdateRequest { Id = categoryId, Name = "Updated Entertainment" };
+
+        // Act
+        await controller.UpdateCategory(request, default);
+
+        // Assert
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Received request to update category")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
 }

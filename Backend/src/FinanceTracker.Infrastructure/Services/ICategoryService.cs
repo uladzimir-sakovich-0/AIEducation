@@ -14,4 +14,12 @@ public interface ICategoryService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The ID of the created category</returns>
     Task<Guid> CreateCategoryAsync(CategoryCreateRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates an existing category
+    /// </summary>
+    /// <param name="request">Category update request</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Task representing the async operation</returns>
+    Task UpdateCategoryAsync(CategoryUpdateRequest request, CancellationToken cancellationToken = default);
 }

@@ -41,4 +41,26 @@ public class CategoriesController : ControllerBase
         
         return CreatedAtAction(nameof(CreateCategory), new { id = categoryId }, categoryId);
     }
+
+    /// <summary>
+    /// Updates an existing category
+    /// </summary>
+    /// <param name="request">Category update request</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>200 OK on successful update, or 400 Bad Request for validation errors</returns>
+    [HttpPut]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateCategory(
+        [FromBody] CategoryUpdateRequest request,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Received request to update category with ID: {CategoryId}", request.Id);
+        
+        await _categoryService.UpdateCategoryAsync(request, cancellationToken);
+        
+        _logger.LogInformation("Category updated successfully with ID: {CategoryId}", request.Id);
+        
+        return Ok();
+    }
 }
