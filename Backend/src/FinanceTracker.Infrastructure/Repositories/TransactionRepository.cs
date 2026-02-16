@@ -12,11 +12,13 @@ public class TransactionRepository : ITransactionRepository
 {
     private readonly FinanceTrackerDbContext _context;
     private readonly ILogger<TransactionRepository> _logger;
+    private readonly IAccountRepository _accountRepository;
 
-    public TransactionRepository(FinanceTrackerDbContext context, ILogger<TransactionRepository> logger)
+    public TransactionRepository(FinanceTrackerDbContext context, ILogger<TransactionRepository> logger, IAccountRepository accountRepository)
     {
         _context = context;
         _logger = logger;
+        _accountRepository = accountRepository;
     }
 
     /// <summary>
@@ -31,6 +33,9 @@ public class TransactionRepository : ITransactionRepository
         
         _context.Transactions.Add(transaction);
         await _context.SaveChangesAsync(cancellationToken);
+        
+        // Update account balance
+        await _accountRepository.UpdateBalanceAsync(transaction.AccountId, transaction.Amount, cancellationToken);
         
         _logger.LogInformation("Transaction created successfully with ID: {TransactionId}", transaction.Id);
         
@@ -59,6 +64,10 @@ public class TransactionRepository : ITransactionRepository
             return null;
         }
         
+        // Calculate balance adjustment: reverse old amount and add new amount
+        var oldAmount = existingTransaction.Amount;
+        var balanceAdjustment = transaction.Amount - oldAmount;
+        
         // Update the properties
         existingTransaction.AccountId = transaction.AccountId;
         existingTransaction.Amount = transaction.Amount;
@@ -67,6 +76,9 @@ public class TransactionRepository : ITransactionRepository
         existingTransaction.Notes = transaction.Notes;
         
         await _context.SaveChangesAsync(cancellationToken);
+        
+        // Update account balance with the difference
+        await _accountRepository.UpdateBalanceAsync(transaction.AccountId, balanceAdjustment, cancellationToken);
         
         _logger.LogInformation("Transaction updated successfully with ID: {TransactionId} for user: {UserId}", transaction.Id, userId);
         
@@ -115,8 +127,15 @@ public class TransactionRepository : ITransactionRepository
             return false;
         }
         
+        // Store amount and accountId before deleting
+        var amount = transaction.Amount;
+        var accountId = transaction.AccountId;
+        
         _context.Transactions.Remove(transaction);
         await _context.SaveChangesAsync(cancellationToken);
+        
+        // Update account balance by reversing the transaction amount
+        await _accountRepository.UpdateBalanceAsync(accountId, -amount, cancellationToken);
         
         _logger.LogInformation("Transaction with ID {TransactionId} deleted successfully for user: {UserId}", id, userId);
         
