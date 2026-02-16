@@ -1,17 +1,17 @@
-@FinanceTracker.API_HostAddress = http://localhost:5270
+@FinanceTracker_API_HostAddress = http://localhost:5270
 
 # Health Check Endpoint
-GET {{FinanceTracker.API_HostAddress}}/api/health
+GET {{FinanceTracker_API_HostAddress}}/api/health
 Accept: application/json
 
 ###
 # Get All Categories Endpoint
-GET {{FinanceTracker.API_HostAddress}}/api/categories
+GET {{FinanceTracker_API_HostAddress}}/api/categories
 Accept: application/json
 
 ###
 # Create Category Endpoint
-POST {{FinanceTracker.API_HostAddress}}/api/categories
+POST {{FinanceTracker_API_HostAddress}}/api/categories
 Content-Type: application/json
 Accept: application/json
 
@@ -21,7 +21,7 @@ Accept: application/json
 
 ###
 # Update Category Endpoint
-PUT {{FinanceTracker.API_HostAddress}}/api/categories
+PUT {{FinanceTracker_API_HostAddress}}/api/categories
 Content-Type: application/json
 Accept: application/json
 
@@ -32,7 +32,7 @@ Accept: application/json
 
 ###
 # Delete Category Endpoint
-DELETE {{FinanceTracker.API_HostAddress}}/api/categories/00000000-0000-0000-0000-000000000000
+DELETE {{FinanceTracker_API_HostAddress}}/api/categories/00000000-0000-0000-0000-000000000000
 Accept: application/json
 
 ###
