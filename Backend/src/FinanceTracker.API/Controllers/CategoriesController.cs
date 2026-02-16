@@ -10,10 +10,9 @@ namespace FinanceTracker.API.Controllers;
 /// <summary>
 /// Controller for category management operations
 /// </summary>
-[ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class CategoriesController : ControllerBase
+public class CategoriesController : BaseApiController
 {
     private readonly ICategoryService _categoryService;
     private readonly ILogger<CategoriesController> _logger;
@@ -134,21 +133,5 @@ public class CategoriesController : ControllerBase
         _logger.LogInformation("Category deleted successfully with ID: {CategoryId} for user: {UserId}", id, userId);
         
         return Ok();
-    }
-
-    /// <summary>
-    /// Extracts the user ID from JWT claims
-    /// </summary>
-    /// <returns>The user ID as a Guid</returns>
-    private Guid GetUserIdFromClaims()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            throw new UnauthorizedAccessException("Invalid user ID in token");
-        }
-        
-        return userId;
     }
 }

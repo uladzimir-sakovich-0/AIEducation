@@ -24,6 +24,8 @@ builder.Services.AddDbContext<FinanceTrackerDbContext>(options =>
 builder.Services.AddScoped<IHealthService, HealthService>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Add FluentValidation
