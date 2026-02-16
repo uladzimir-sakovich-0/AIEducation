@@ -14,12 +14,24 @@
     </v-row>
     <v-row>
       <v-col cols="12">
+        <v-alert
+          v-if="error"
+          type="error"
+          variant="tonal"
+          class="mb-4"
+          closable
+          @click:close="error = null"
+        >
+          {{ error }}
+        </v-alert>
+
         <v-card>
           <v-card-text>
             <v-data-table
               :headers="headers"
               :items="categories"
               :items-per-page="10"
+              :loading="loading"
             >
               <template v-slot:item.actions="{ item }">
                 <v-btn icon size="small" @click="editCategory(item)">
@@ -82,6 +94,8 @@ export default {
     return {
       dialog: false,
       editMode: false,
+      loading: false,
+      error: null,
       headers: [
         { title: 'Name', key: 'name' },
         { title: 'Actions', key: 'actions', sortable: false }
@@ -93,31 +107,117 @@ export default {
       editingId: null
     }
   },
+  mounted() {
+    this.loadCategories()
+  },
   methods: {
+    async loadCategories() {
+      this.loading = true
+      this.error = null
+
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5270'
+        const response = await fetch(`${apiBaseUrl}/api/Categories`)
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        this.categories = await response.json()
+      } catch (err) {
+        this.error = err.message || 'Failed to load categories'
+        console.error('Error loading categories:', err)
+      } finally {
+        this.loading = false
+      }
+    },
     editCategory(category) {
       this.editMode = true
       this.editingId = category.id
       this.formData = { ...category }
       this.dialog = true
     },
-    deleteCategory(category) {
-      if (confirm('Are you sure you want to delete this category?')) {
+    async deleteCategory(category) {
+      if (!confirm('Are you sure you want to delete this category?')) {
+        return
+      }
+
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5270'
+        const response = await fetch(`${apiBaseUrl}/api/Categories/${category.id}`, {
+          method: 'DELETE'
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.detail || `HTTP error! status: ${response.status}`)
+        }
+
+        // Remove from local array after successful deletion
         this.categories = this.categories.filter(c => c.id !== category.id)
+      } catch (err) {
+        this.error = err.message || 'Failed to delete category'
+        console.error('Error deleting category:', err)
+        alert(`Failed to delete category: ${err.message}`)
       }
     },
-    saveCategory() {
-      if (this.editMode) {
-        const index = this.categories.findIndex(c => c.id === this.editingId)
-        if (index !== -1) {
-          this.categories[index] = { ...this.formData, id: this.editingId }
+    async saveCategory() {
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5270'
+
+        if (this.editMode) {
+          // Update existing category
+          const response = await fetch(`${apiBaseUrl}/api/Categories`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              id: this.editingId,
+              name: this.formData.name
+            })
+          })
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+
+          // Update local array
+          const index = this.categories.findIndex(c => c.id === this.editingId)
+          if (index !== -1) {
+            this.categories[index] = { ...this.formData, id: this.editingId }
+          }
+        } else {
+          // Create new category
+          const response = await fetch(`${apiBaseUrl}/api/Categories`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              name: this.formData.name
+            })
+          })
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+
+          const categoryId = await response.json()
+
+          // Add to local array with the ID from the server
+          this.categories.push({
+            id: categoryId,
+            name: this.formData.name
+          })
         }
-      } else {
-        this.categories.push({
-          ...this.formData,
-          id: Date.now()
-        })
+
+        this.closeDialog()
+      } catch (err) {
+        this.error = err.message || 'Failed to save category'
+        console.error('Error saving category:', err)
+        alert(`Failed to save category: ${err.message}`)
       }
-      this.closeDialog()
     },
     closeDialog() {
       this.dialog = false
