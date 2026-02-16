@@ -34,9 +34,9 @@
             </tr>
             <tr v-else v-for="transaction in transactions" :key="transaction.id">
               <td>{{ formatDate(transaction.timestamp) }}</td>
-              <td>{{ transaction.category }}</td>
+              <td>{{ getCategoryName(transaction.categoryId) }}</td>
               <td>{{ transaction.notes || '-' }}</td>
-              <td>{{ transaction.account }}</td>
+              <td>{{ getAccountName(transaction.accountId) }}</td>
               <td :class="transaction.amount < 0 ? 'text-error' : 'text-success'">
                 {{ formatAmount(transaction.amount) }}
               </td>
@@ -145,6 +145,7 @@
 import MainLayout from '../components/MainLayout.vue'
 import accountService from '../services/accountService'
 import categoryService from '../services/categoryService'
+import transactionService from '../services/transactionService'
 
 export default {
   name: 'Transactions',
@@ -179,6 +180,7 @@ export default {
   mounted() {
     this.loadAccounts()
     this.loadCategories()
+    this.loadTransactions()
   },
   methods: {
     async loadAccounts() {
@@ -195,6 +197,15 @@ export default {
         console.error('Error loading categories:', err)
       }
     },
+    async loadTransactions() {
+      try {
+        this.transactions = await transactionService.getAll()
+        // Sort by timestamp descending (newest first)
+        this.transactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      } catch (err) {
+        console.error('Error loading transactions:', err)
+      }
+    },
     editTransaction(transaction) {
       this.editMode = true
       this.editingId = transaction.id
@@ -208,42 +219,42 @@ export default {
       this.amountValue = Math.abs(transaction.amount)
       this.dialog = true
     },
-    deleteTransaction(transaction) {
+    async deleteTransaction(transaction) {
       if (confirm('Are you sure you want to delete this transaction?')) {
-        this.transactions = this.transactions.filter(t => t.id !== transaction.id)
+        try {
+          await transactionService.delete(transaction.id)
+          await this.loadTransactions()
+        } catch (err) {
+          console.error('Error deleting transaction:', err)
+          alert('Failed to delete transaction. Please try again.')
+        }
       }
     },
-    saveTransaction() {
+    async saveTransaction() {
       // Calculate the actual amount based on operation type
       const actualAmount = this.operationType === 'income' ? this.amountValue : -this.amountValue
       
-      const account = this.accounts.find(a => a.id === this.formData.accountId)
-      const category = this.categories.find(c => c.id === this.formData.categoryId)
-      
-      if (this.editMode) {
-        const index = this.transactions.findIndex(t => t.id === this.editingId)
-        if (index !== -1) {
-          const originalTransaction = this.transactions[index]
-          this.transactions[index] = { 
-            ...this.formData,
-            amount: actualAmount,
-            account: account?.name || '',
-            category: category?.name || '',
-            id: this.editingId,
-            timestamp: originalTransaction.timestamp
-          }
-        }
-      } else {
-        this.transactions.push({
-          ...this.formData,
-          amount: actualAmount,
-          account: account?.name || '',
-          category: category?.name || '',
-          id: Date.now(),
-          timestamp: new Date().toISOString()
-        })
+      const transactionData = {
+        accountId: this.formData.accountId,
+        categoryId: this.formData.categoryId,
+        amount: actualAmount,
+        timestamp: new Date().toISOString(),
+        notes: this.formData.notes || ''
       }
-      this.closeDialog()
+      
+      try {
+        if (this.editMode) {
+          transactionData.id = this.editingId
+          await transactionService.update(transactionData)
+        } else {
+          await transactionService.create(transactionData)
+        }
+        await this.loadTransactions()
+        this.closeDialog()
+      } catch (err) {
+        console.error('Error saving transaction:', err)
+        alert('Failed to save transaction. Please try again.')
+      }
     },
     closeDialog() {
       this.dialog = false
@@ -272,6 +283,14 @@ export default {
         currency: 'USD'
       }).format(absAmount)
       return amount < 0 ? `-${formatted}` : `+${formatted}`
+    },
+    getAccountName(accountId) {
+      const account = this.accounts.find(a => a.id === accountId)
+      return account ? account.name : '-'
+    },
+    getCategoryName(categoryId) {
+      const category = this.categories.find(c => c.id === categoryId)
+      return category ? category.name : '-'
     }
   }
 }
