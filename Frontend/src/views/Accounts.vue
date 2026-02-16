@@ -12,6 +12,13 @@
         </v-btn>
       </v-col>
     </v-row>
+    <v-row v-if="error">
+      <v-col cols="12">
+        <v-alert type="error" dismissible @click:close="error = null">
+          {{ error }}
+        </v-alert>
+      </v-col>
+    </v-row>
     <v-row>
       <v-col cols="12">
         <v-card>
@@ -20,6 +27,7 @@
               :headers="headers"
               :items="accounts"
               :items-per-page="10"
+              :loading="loading"
             >
               <template v-slot:item.balance="{ item }">
                 ${{ item.balance.toFixed(2) }}
@@ -79,10 +87,10 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="grey" variant="text" @click="closeDialog">
+          <v-btn color="grey" variant="text" @click="closeDialog" :disabled="loading">
             Cancel
           </v-btn>
-          <v-btn color="primary" variant="text" @click="saveAccount">
+          <v-btn color="primary" variant="text" @click="saveAccount" :loading="loading">
             Save
           </v-btn>
         </v-card-actions>
@@ -93,6 +101,7 @@
 
 <script>
 import MainLayout from '../components/MainLayout.vue'
+import accountService from '../services/accountService'
 
 export default {
   name: 'Accounts',
@@ -111,46 +120,76 @@ export default {
         { title: 'Actions', key: 'actions', sortable: false }
       ],
       accounts: [],
-      accountTypes: ['Checking', 'Savings', 'Credit Card', 'Investment'],
+      accountTypes: ['Cash', 'Bank'],
       formData: {
         name: '',
         accountType: '',
         balance: 0
       },
-      editingId: null
+      editingId: null,
+      loading: false,
+      error: null
     }
   },
+  async mounted() {
+    await this.loadAccounts()
+  },
   methods: {
+    async loadAccounts() {
+      try {
+        this.loading = true
+        this.error = null
+        this.accounts = await accountService.getAll()
+      } catch (err) {
+        this.error = err.message || 'Failed to load accounts'
+        console.error('Error loading accounts:', err)
+      } finally {
+        this.loading = false
+      }
+    },
     editAccount(account) {
       this.editMode = true
       this.editingId = account.id
-      this.formData = { ...account }
+      this.formData = { 
+        name: account.name,
+        accountType: account.accountType,
+        balance: account.balance
+      }
       this.dialog = true
     },
-    deleteAccount(account) {
+    async deleteAccount(account) {
       if (confirm('Are you sure you want to delete this account?')) {
-        this.accounts = this.accounts.filter(a => a.id !== account.id)
+        try {
+          await accountService.delete(account.id)
+          await this.loadAccounts()
+        } catch (err) {
+          this.error = err.message || 'Failed to delete account'
+          console.error('Error deleting account:', err)
+        }
       }
     },
-    saveAccount() {
-      if (this.editMode) {
-        const index = this.accounts.findIndex(a => a.id === this.editingId)
-        if (index !== -1) {
-          const originalAccount = this.accounts[index]
-          this.accounts[index] = { 
-            ...this.formData, 
+    async saveAccount() {
+      try {
+        this.loading = true
+        this.error = null
+        
+        if (this.editMode) {
+          await accountService.update({
             id: this.editingId,
-            createdAt: originalAccount.createdAt
-          }
+            ...this.formData
+          })
+        } else {
+          await accountService.create(this.formData)
         }
-      } else {
-        this.accounts.push({
-          ...this.formData,
-          id: Date.now(),
-          createdAt: new Date().toISOString()
-        })
+        
+        await this.loadAccounts()
+        this.closeDialog()
+      } catch (err) {
+        this.error = err.message || 'Failed to save account'
+        console.error('Error saving account:', err)
+      } finally {
+        this.loading = false
       }
-      this.closeDialog()
     },
     closeDialog() {
       this.dialog = false
