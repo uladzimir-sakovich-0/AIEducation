@@ -4,6 +4,7 @@
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title>Finance Tracker</v-toolbar-title>
       <v-spacer></v-spacer>
+      <span class="mr-4">{{ userEmail }}</span>
       <v-btn icon @click="logout">
         <v-icon>mdi-logout</v-icon>
       </v-btn>
