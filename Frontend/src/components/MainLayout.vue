@@ -4,11 +4,15 @@
     <v-navigation-drawer permanent width="240" class="side-nav">
       <!-- User Profile Section -->
       <div class="user-profile pa-4">
-        <v-avatar color="primary" size="48" class="mb-3">
-          <span class="text-h6">{{ userInitials }}</span>
-        </v-avatar>
-        <div class="text-body-1 font-weight-medium">{{ userName }}</div>
-        <div class="text-caption text-medium-emphasis">{{ userEmail }}</div>
+        <div class="d-flex align-center">
+          <v-avatar color="primary" size="40" class="mr-3">
+            <span class="text-body-1">{{ userInitials }}</span>
+          </v-avatar>
+          <div class="flex-grow-1">
+            <div class="text-body-1 font-weight-medium">{{ userName }}</div>
+            <div class="text-caption text-medium-emphasis">{{ userEmail }}</div>
+          </div>
+        </div>
       </div>
 
       <v-divider></v-divider>

@@ -25,7 +25,7 @@
     <v-card class="elevation-0 mb-6">
       <v-card-text class="pa-6">
         <div class="text-body-2 text-medium-emphasis mb-2">Total Balance</div>
-        <div class="text-h3 font-weight-medium">{{ formatCurrency(totalBalance) }}</div>
+        <div class="text-h3 font-weight-medium" :class="getBalanceClass(totalBalance)">{{ formatCurrency(totalBalance) }}</div>
       </v-card-text>
     </v-card>
 
@@ -40,29 +40,27 @@
               <th>Account Name</th>
               <th>Type</th>
               <th>Balance</th>
-              <th>Currency</th>
               <th>Last Updated</th>
               <th class="text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="6" class="text-center py-8">
+              <td colspan="5" class="text-center py-8">
                 <v-progress-circular indeterminate color="primary"></v-progress-circular>
               </td>
             </tr>
             <tr v-else-if="accounts.length === 0">
-              <td colspan="6" class="text-center py-8">
+              <td colspan="5" class="text-center py-8">
                 <p class="text-medium-emphasis">No accounts yet. Click "New" to create one.</p>
               </td>
             </tr>
             <tr v-else v-for="account in accounts" :key="account.id">
               <td>{{ account.name }}</td>
               <td>{{ account.accountType }}</td>
-              <td :class="account.balance < 0 ? 'text-error' : ''">
+              <td :class="getBalanceClass(account.balance)">
                 {{ formatCurrency(account.balance) }}
               </td>
-              <td>{{ account.currency || 'USD' }}</td>
               <td>{{ formatDate(account.updatedAt || account.createdAt) }}</td>
               <td class="text-right">
                 <v-btn icon variant="text" size="small" @click="editAccount(account)">
@@ -113,14 +111,6 @@
               required
               class="mb-2"
             ></v-text-field>
-            <v-select
-              v-model="formData.currency"
-              :items="currencies"
-              label="Currency"
-              variant="outlined"
-              density="comfortable"
-              required
-            ></v-select>
           </v-form>
         </v-card-text>
         <v-card-actions class="px-6 pb-6">
@@ -152,12 +142,10 @@ export default {
       editMode: false,
       accounts: [],
       accountTypes: ['Checking', 'Savings', 'Credit', 'Investment'],
-      currencies: ['USD', 'EUR', 'GBP', 'JPY'],
       formData: {
         name: '',
         accountType: '',
-        balance: 0,
-        currency: 'USD'
+        balance: 0
       },
       editingId: null,
       loading: false,
@@ -191,8 +179,7 @@ export default {
       this.formData = { 
         name: account.name,
         accountType: account.accountType,
-        balance: account.balance,
-        currency: account.currency || 'USD'
+        balance: account.balance
       }
       this.dialog = true
     },
@@ -237,8 +224,7 @@ export default {
       this.formData = {
         name: '',
         accountType: '',
-        balance: 0,
-        currency: 'USD'
+        balance: 0
       }
     },
     formatDate(date) {
@@ -254,6 +240,11 @@ export default {
         style: 'currency',
         currency: 'USD'
       }).format(amount || 0)
+    },
+    getBalanceClass(balance) {
+      if (balance > 0) return 'text-success'
+      if (balance < 0) return 'text-error'
+      return ''
     }
   }
 }
@@ -282,7 +273,8 @@ export default {
 }
 
 .custom-table tbody tr td {
-  padding: 16px !important;
+  padding: 10px 16px !important;
   font-size: 0.9375rem;
+  height: 48px;
 }
 </style>

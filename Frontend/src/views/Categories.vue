@@ -253,8 +253,9 @@ export default {
 }
 
 .custom-table tbody tr td {
-  padding: 16px !important;
+  padding: 10px 16px !important;
   font-size: 0.9375rem;
+  height: 48px;
 }
 
 .color-dot {
