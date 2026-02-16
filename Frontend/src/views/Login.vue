@@ -77,14 +77,23 @@ export default {
       try {
         if (!this.email || !this.password) {
           this.error = 'Please enter email and password'
+          this.loading = false
           return
         }
 
-        await authService.login(this.email, this.password)
-        this.$router.push('/dashboard')
+        console.log('Attempting login...')
+        const response = await authService.login(this.email, this.password)
+        console.log('Login successful', response)
+        
+        // Only navigate if login was successful and we have a token
+        if (response && response.token) {
+          this.$router.push('/dashboard')
+        } else {
+          throw new Error('Login failed: No authentication token received')
+        }
       } catch (err) {
-        this.error = err.message || 'Login failed'
-      } finally {
+        console.error('Login error:', err)
+        this.error = err.message || 'Login failed. Please check your credentials.'
         this.loading = false
       }
     }

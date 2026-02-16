@@ -11,23 +11,36 @@ class AuthService {
    * @param {string} email - User email
    * @param {string} password - User password
    * @returns {Promise<Object>} Login response with token
+   * @throws {Error} If login fails or response is invalid
    */
   async login(email, password) {
-    const response = await apiService.post('/api/auth/login', {
-      email,
-      password
-    })
+    // Clear any existing session before attempting login
+    this.logout()
     
-    // Save token to session storage
-    if (response.token) {
+    try {
+      const response = await apiService.post('/api/auth/login', {
+        email,
+        password
+      })
+      
+      // Validate response has required fields
+      if (!response || !response.token) {
+        throw new Error('Invalid response from server: missing token')
+      }
+      
+      // Save token to session storage only after successful authentication
       sessionStorage.setItem('authToken', response.token)
-      sessionStorage.setItem('userEmail', response.email)
+      sessionStorage.setItem('userEmail', response.email || email)
       if (response.expiresAt) {
         sessionStorage.setItem('tokenExpiresAt', response.expiresAt)
       }
+      
+      return response
+    } catch (error) {
+      // Ensure session is cleared on any error
+      this.logout()
+      throw error
     }
-    
-    return response
   }
 
   /**

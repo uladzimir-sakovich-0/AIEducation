@@ -16,9 +16,8 @@ FROM nginx:alpine AS final
 # Copy built files to nginx
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy custom nginx configuration if needed
-# For now, use default nginx configuration
-# COPY nginx.conf /etc/nginx/nginx.conf
+# Copy custom nginx configuration for SPA routing
+COPY Docker/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
