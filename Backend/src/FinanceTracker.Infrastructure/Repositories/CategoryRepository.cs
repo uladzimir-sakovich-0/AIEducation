@@ -38,75 +38,80 @@ public class CategoryRepository : ICategoryRepository
     }
 
     /// <summary>
-    /// Updates an existing category in the database
+    /// Updates an existing category in the database if it belongs to the specified user
     /// </summary>
     /// <param name="category">The category to update</param>
+    /// <param name="userId">The ID of the user who owns the category</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The updated category</returns>
-    public async Task<Category> UpdateAsync(Category category, CancellationToken cancellationToken = default)
+    /// <returns>The updated category, or null if not found or doesn't belong to user</returns>
+    public async Task<Category?> UpdateAsync(Category category, Guid userId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Updating category with ID: {CategoryId}", category.Id);
+        _logger.LogInformation("Updating category with ID: {CategoryId} for user: {UserId}", category.Id, userId);
         
-        // Check if the entity is already being tracked
-        var trackedEntity = _context.Categories.Local.FirstOrDefault(c => c.Id == category.Id);
-        if (trackedEntity != null)
+        // First verify the category exists and belongs to the user
+        var existingCategory = await _context.Categories
+            .FirstOrDefaultAsync(c => c.Id == category.Id && c.UserId == userId, cancellationToken);
+        
+        if (existingCategory == null)
         {
-            // If already tracked, update its properties
-            _context.Entry(trackedEntity).CurrentValues.SetValues(category);
+            _logger.LogWarning("Category with ID {CategoryId} not found or does not belong to user {UserId}", category.Id, userId);
+            return null;
         }
-        else
-        {
-            // If not tracked, update the entity
-            _context.Categories.Update(category);
-        }
+        
+        // Update only the allowed properties (Name in this case)
+        existingCategory.Name = category.Name;
         
         await _context.SaveChangesAsync(cancellationToken);
         
-        _logger.LogInformation("Category updated successfully with ID: {CategoryId}", category.Id);
+        _logger.LogInformation("Category updated successfully with ID: {CategoryId} for user: {UserId}", category.Id, userId);
         
-        return trackedEntity ?? category;
+        return existingCategory;
     }
 
     /// <summary>
-    /// Gets all categories from the database
+    /// Gets all categories from the database for a specific user
     /// </summary>
+    /// <param name="userId">The ID of the user whose categories to retrieve</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of all categories</returns>
-    public async Task<List<Category>> GetAllAsync(CancellationToken cancellationToken = default)
+    /// <returns>List of all categories for the user</returns>
+    public async Task<List<Category>> GetAllAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Retrieving all categories from database");
+        _logger.LogInformation("Retrieving all categories from database for user: {UserId}", userId);
         
         var categories = await _context.Categories
             .AsNoTracking()
+            .Where(c => c.UserId == userId)
             .ToListAsync(cancellationToken);
         
-        _logger.LogInformation("Retrieved {Count} categories from database", categories.Count);
+        _logger.LogInformation("Retrieved {Count} categories from database for user: {UserId}", categories.Count, userId);
         
         return categories;
     }
 
     /// <summary>
-    /// Deletes a category from the database
+    /// Deletes a category from the database if it belongs to the specified user
     /// </summary>
     /// <param name="id">The ID of the category to delete</param>
+    /// <param name="userId">The ID of the user who owns the category</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>True if category was found and deleted, false if not found</returns>
-    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    /// <returns>True if category was found, belongs to user, and was deleted; false otherwise</returns>
+    public async Task<bool> DeleteAsync(Guid id, Guid userId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Attempting to delete category with ID: {CategoryId}", id);
+        _logger.LogInformation("Attempting to delete category with ID: {CategoryId} for user: {UserId}", id, userId);
         
-        var category = await _context.Categories.FindAsync(new object[] { id }, cancellationToken);
+        var category = await _context.Categories
+            .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId, cancellationToken);
         
         if (category == null)
         {
-            _logger.LogWarning("Category with ID {CategoryId} not found for deletion", id);
+            _logger.LogWarning("Category with ID {CategoryId} not found or does not belong to user {UserId}", id, userId);
             return false;
         }
         
         _context.Categories.Remove(category);
         await _context.SaveChangesAsync(cancellationToken);
         
-        _logger.LogInformation("Category with ID {CategoryId} deleted successfully", id);
+        _logger.LogInformation("Category with ID {CategoryId} deleted successfully for user: {UserId}", id, userId);
         
         return true;
     }

@@ -21,6 +21,17 @@ public class Category
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// Foreign key to the user who owns this category
+    /// </summary>
+    [Required]
+    public Guid UserId { get; set; }
+
+    /// <summary>
+    /// Navigation property to the user who owns this category
+    /// </summary>
+    public User User { get; set; } = null!;
+
+    /// <summary>
     /// Navigation property for transactions in this category
     /// </summary>
     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();

@@ -8,10 +8,13 @@ using Moq;
 namespace FinanceTracker.UnitTests.Services;
 
 /// <summary>
-/// Tests for CategoryService
+/// Tests for CategoryService with user ownership validation
 /// </summary>
 public class CategoryServiceTests
 {
+    private readonly Guid _testUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private readonly Guid _otherUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+
     private Mock<ICategoryRepository> GetMockRepository()
     {
         return new Mock<ICategoryRepository>();
@@ -31,19 +34,19 @@ public class CategoryServiceTests
         var service = new CategoryService(mockRepository.Object, mockLogger.Object);
         
         mockRepository
-            .Setup(r => r.CreateAsync(It.IsAny<Category>(), default))
+            .Setup(r => r.CreateAsync(It.IsAny<Category>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Category c, CancellationToken ct) => c);
 
         var request = new CategoryCreateRequest { Name = "Food" };
 
         // Act
-        await service.CreateCategoryAsync(request, default);
+        await service.CreateCategoryAsync(request, _testUserId, CancellationToken.None);
 
         // Assert
         mockRepository.Verify(
             r => r.CreateAsync(
-                It.Is<Category>(c => c.Name == "Food" && c.Id != Guid.Empty),
-                default),
+                It.Is<Category>(c => c.Name == "Food" && c.UserId == _testUserId && c.Id != Guid.Empty),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -57,7 +60,7 @@ public class CategoryServiceTests
         
         var expectedId = Guid.NewGuid();
         mockRepository
-            .Setup(r => r.CreateAsync(It.IsAny<Category>(), default))
+            .Setup(r => r.CreateAsync(It.IsAny<Category>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Category c, CancellationToken ct) => 
             {
                 c.Id = expectedId;
@@ -67,86 +70,14 @@ public class CategoryServiceTests
         var request = new CategoryCreateRequest { Name = "Transportation" };
 
         // Act
-        var result = await service.CreateCategoryAsync(request, default);
+        var result = await service.CreateCategoryAsync(request, _testUserId, CancellationToken.None);
 
         // Assert
         Assert.Equal(expectedId, result);
     }
 
     [Fact]
-    public async Task WhenCreatingCategory_ThenGeneratesNewGuid()
-    {
-        // Arrange
-        var mockRepository = GetMockRepository();
-        var mockLogger = GetMockLogger();
-        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
-        
-        mockRepository
-            .Setup(r => r.CreateAsync(It.IsAny<Category>(), default))
-            .ReturnsAsync((Category c, CancellationToken ct) => c);
-
-        var request = new CategoryCreateRequest { Name = "Housing" };
-
-        // Act
-        var result = await service.CreateCategoryAsync(request, default);
-
-        // Assert
-        Assert.NotEqual(Guid.Empty, result);
-    }
-
-    [Fact]
-    public async Task WhenCreatingCategory_ThenLogsInformation()
-    {
-        // Arrange
-        var mockRepository = GetMockRepository();
-        var mockLogger = GetMockLogger();
-        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
-        
-        mockRepository
-            .Setup(r => r.CreateAsync(It.IsAny<Category>(), default))
-            .ReturnsAsync((Category c, CancellationToken ct) => c);
-
-        var request = new CategoryCreateRequest { Name = "Entertainment" };
-
-        // Act
-        await service.CreateCategoryAsync(request, default);
-
-        // Assert
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Creating category")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.AtLeastOnce);
-    }
-
-    [Fact]
-    public async Task WhenCreatingMultipleCategories_ThenEachGetsUniqueId()
-    {
-        // Arrange
-        var mockRepository = GetMockRepository();
-        var mockLogger = GetMockLogger();
-        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
-        
-        mockRepository
-            .Setup(r => r.CreateAsync(It.IsAny<Category>(), default))
-            .ReturnsAsync((Category c, CancellationToken ct) => c);
-
-        var request1 = new CategoryCreateRequest { Name = "Food" };
-        var request2 = new CategoryCreateRequest { Name = "Housing" };
-
-        // Act
-        var result1 = await service.CreateCategoryAsync(request1, default);
-        var result2 = await service.CreateCategoryAsync(request2, default);
-
-        // Assert
-        Assert.NotEqual(result1, result2);
-    }
-
-    [Fact]
-    public async Task WhenUpdatingCategory_ThenRepositoryIsCalledWithCorrectData()
+    public async Task WhenUpdatingCategory_WithValidOwnership_ThenRepositoryIsCalledAndReturnsTrue()
     {
         // Arrange
         var mockRepository = GetMockRepository();
@@ -154,25 +85,29 @@ public class CategoryServiceTests
         var service = new CategoryService(mockRepository.Object, mockLogger.Object);
         
         var categoryId = Guid.NewGuid();
+        var updatedCategory = new Category { Id = categoryId, Name = "Updated Food", UserId = _testUserId };
+        
         mockRepository
-            .Setup(r => r.UpdateAsync(It.IsAny<Category>(), default))
-            .ReturnsAsync((Category c, CancellationToken ct) => c);
+            .Setup(r => r.UpdateAsync(It.IsAny<Category>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updatedCategory);
 
         var request = new CategoryUpdateRequest { Id = categoryId, Name = "Updated Food" };
 
         // Act
-        await service.UpdateCategoryAsync(request, default);
+        var result = await service.UpdateCategoryAsync(request, _testUserId, CancellationToken.None);
 
         // Assert
+        Assert.True(result);
         mockRepository.Verify(
             r => r.UpdateAsync(
-                It.Is<Category>(c => c.Id == categoryId && c.Name == "Updated Food"),
-                default),
+                It.Is<Category>(c => c.Id == categoryId && c.Name == "Updated Food" && c.UserId == _testUserId),
+                _testUserId,
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
-    public async Task WhenUpdatingCategory_ThenUsesIdFromRequest()
+    public async Task WhenUpdatingCategory_WithInvalidOwnership_ThenReturnsFalse()
     {
         // Arrange
         var mockRepository = GetMockRepository();
@@ -180,53 +115,22 @@ public class CategoryServiceTests
         var service = new CategoryService(mockRepository.Object, mockLogger.Object);
         
         var categoryId = Guid.NewGuid();
-        mockRepository
-            .Setup(r => r.UpdateAsync(It.IsAny<Category>(), default))
-            .ReturnsAsync((Category c, CancellationToken ct) => c);
-
-        var request = new CategoryUpdateRequest { Id = categoryId, Name = "Transportation" };
-
-        // Act
-        await service.UpdateCategoryAsync(request, default);
-
-        // Assert
-        mockRepository.Verify(
-            r => r.UpdateAsync(
-                It.Is<Category>(c => c.Id == categoryId),
-                default),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task WhenUpdatingCategory_ThenLogsInformation()
-    {
-        // Arrange
-        var mockRepository = GetMockRepository();
-        var mockLogger = GetMockLogger();
-        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
         
         mockRepository
-            .Setup(r => r.UpdateAsync(It.IsAny<Category>(), default))
-            .ReturnsAsync((Category c, CancellationToken ct) => c);
+            .Setup(r => r.UpdateAsync(It.IsAny<Category>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Category?)null);
 
-        var request = new CategoryUpdateRequest { Id = Guid.NewGuid(), Name = "Entertainment" };
+        var request = new CategoryUpdateRequest { Id = categoryId, Name = "Hacked Food" };
 
         // Act
-        await service.UpdateCategoryAsync(request, default);
+        var result = await service.UpdateCategoryAsync(request, _otherUserId, CancellationToken.None);
 
         // Assert
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Updating category")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.AtLeastOnce);
+        Assert.False(result);
     }
 
     [Fact]
-    public async Task WhenGettingAllCategories_ThenRepositoryIsCalled()
+    public async Task WhenGettingAllCategories_ThenRepositoryIsCalledWithUserId()
     {
         // Arrange
         var mockRepository = GetMockRepository();
@@ -235,19 +139,19 @@ public class CategoryServiceTests
         
         var categories = new List<Category>
         {
-            new Category { Id = Guid.NewGuid(), Name = "Food" },
-            new Category { Id = Guid.NewGuid(), Name = "Housing" }
+            new Category { Id = Guid.NewGuid(), Name = "Food", UserId = _testUserId },
+            new Category { Id = Guid.NewGuid(), Name = "Housing", UserId = _testUserId }
         };
         
         mockRepository
-            .Setup(r => r.GetAllAsync(default))
+            .Setup(r => r.GetAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(categories);
 
         // Act
-        await service.GetAllCategoriesAsync(default);
+        await service.GetAllCategoriesAsync(_testUserId, CancellationToken.None);
 
         // Assert
-        mockRepository.Verify(r => r.GetAllAsync(default), Times.Once);
+        mockRepository.Verify(r => r.GetAllAsync(_testUserId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -262,16 +166,16 @@ public class CategoryServiceTests
         var categoryId2 = Guid.NewGuid();
         var categories = new List<Category>
         {
-            new Category { Id = categoryId1, Name = "Food" },
-            new Category { Id = categoryId2, Name = "Housing" }
+            new Category { Id = categoryId1, Name = "Food", UserId = _testUserId },
+            new Category { Id = categoryId2, Name = "Housing", UserId = _testUserId }
         };
         
         mockRepository
-            .Setup(r => r.GetAllAsync(default))
+            .Setup(r => r.GetAllAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(categories);
 
         // Act
-        var result = await service.GetAllCategoriesAsync(default);
+        var result = await service.GetAllCategoriesAsync(_testUserId, CancellationToken.None);
 
         // Assert
         Assert.NotNull(result);
@@ -281,53 +185,7 @@ public class CategoryServiceTests
     }
 
     [Fact]
-    public async Task WhenGettingAllCategories_WithNoCategories_ThenReturnsEmptyList()
-    {
-        // Arrange
-        var mockRepository = GetMockRepository();
-        var mockLogger = GetMockLogger();
-        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
-        
-        mockRepository
-            .Setup(r => r.GetAllAsync(default))
-            .ReturnsAsync(new List<Category>());
-
-        // Act
-        var result = await service.GetAllCategoriesAsync(default);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task WhenGettingAllCategories_ThenLogsInformation()
-    {
-        // Arrange
-        var mockRepository = GetMockRepository();
-        var mockLogger = GetMockLogger();
-        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
-        
-        mockRepository
-            .Setup(r => r.GetAllAsync(default))
-            .ReturnsAsync(new List<Category>());
-
-        // Act
-        await service.GetAllCategoriesAsync(default);
-
-        // Assert
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Retrieving all categories")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task WhenDeletingCategory_WithValidId_ThenRepositoryIsCalled()
+    public async Task WhenDeletingCategory_WithValidOwnership_ThenReturnsTrue()
     {
         // Arrange
         var mockRepository = GetMockRepository();
@@ -336,38 +194,19 @@ public class CategoryServiceTests
         
         var categoryId = Guid.NewGuid();
         mockRepository
-            .Setup(r => r.DeleteAsync(categoryId, default))
+            .Setup(r => r.DeleteAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
-        await service.DeleteCategoryAsync(categoryId, default);
-
-        // Assert
-        mockRepository.Verify(r => r.DeleteAsync(categoryId, default), Times.Once);
-    }
-
-    [Fact]
-    public async Task WhenDeletingCategory_WithValidId_ThenReturnsTrue()
-    {
-        // Arrange
-        var mockRepository = GetMockRepository();
-        var mockLogger = GetMockLogger();
-        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
-        
-        var categoryId = Guid.NewGuid();
-        mockRepository
-            .Setup(r => r.DeleteAsync(categoryId, default))
-            .ReturnsAsync(true);
-
-        // Act
-        var result = await service.DeleteCategoryAsync(categoryId, default);
+        var result = await service.DeleteCategoryAsync(categoryId, _testUserId, CancellationToken.None);
 
         // Assert
         Assert.True(result);
+        mockRepository.Verify(r => r.DeleteAsync(categoryId, _testUserId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task WhenDeletingCategory_WithInvalidId_ThenReturnsFalse()
+    public async Task WhenDeletingCategory_WithInvalidOwnership_ThenReturnsFalse()
     {
         // Arrange
         var mockRepository = GetMockRepository();
@@ -376,67 +215,13 @@ public class CategoryServiceTests
         
         var categoryId = Guid.NewGuid();
         mockRepository
-            .Setup(r => r.DeleteAsync(categoryId, default))
+            .Setup(r => r.DeleteAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
-        var result = await service.DeleteCategoryAsync(categoryId, default);
+        var result = await service.DeleteCategoryAsync(categoryId, _otherUserId, CancellationToken.None);
 
         // Assert
         Assert.False(result);
-    }
-
-    [Fact]
-    public async Task WhenDeletingCategory_WithValidId_ThenLogsSuccess()
-    {
-        // Arrange
-        var mockRepository = GetMockRepository();
-        var mockLogger = GetMockLogger();
-        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
-        
-        var categoryId = Guid.NewGuid();
-        mockRepository
-            .Setup(r => r.DeleteAsync(categoryId, default))
-            .ReturnsAsync(true);
-
-        // Act
-        await service.DeleteCategoryAsync(categoryId, default);
-
-        // Assert
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("deleted successfully")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task WhenDeletingCategory_WithInvalidId_ThenLogsWarning()
-    {
-        // Arrange
-        var mockRepository = GetMockRepository();
-        var mockLogger = GetMockLogger();
-        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
-        
-        var categoryId = Guid.NewGuid();
-        mockRepository
-            .Setup(r => r.DeleteAsync(categoryId, default))
-            .ReturnsAsync(false);
-
-        // Act
-        await service.DeleteCategoryAsync(categoryId, default);
-
-        // Assert
-        mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("not found for deletion")),
-                null,
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
     }
 }

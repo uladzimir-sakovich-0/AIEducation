@@ -116,6 +116,13 @@ public class FinanceTrackerDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.UserId).IsRequired();
+
+            // Configure relationship with User
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.Categories)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configure Transaction entity
