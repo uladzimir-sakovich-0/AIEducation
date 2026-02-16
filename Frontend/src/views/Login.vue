@@ -54,6 +54,7 @@
 
 <script>
 import AuthLayout from '../components/AuthLayout.vue'
+import { authService } from '../services'
 
 export default {
   name: 'Login',
@@ -74,15 +75,13 @@ export default {
       this.error = null
       
       try {
-        // TODO: Replace with actual API call when auth endpoints are ready
-        // For MVP, we'll use simple localStorage authentication
-        if (this.email && this.password) {
-          localStorage.setItem('isAuthenticated', 'true')
-          localStorage.setItem('userEmail', this.email)
-          this.$router.push('/dashboard')
-        } else {
+        if (!this.email || !this.password) {
           this.error = 'Please enter email and password'
+          return
         }
+
+        await authService.login(this.email, this.password)
+        this.$router.push('/dashboard')
       } catch (err) {
         this.error = err.message || 'Login failed'
       } finally {

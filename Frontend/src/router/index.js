@@ -59,9 +59,9 @@ const router = createRouter({
   routes
 })
 
-// Basic auth guard - will be enhanced with real authentication later
+// Navigation guard for authentication
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const isAuthenticated = !!sessionStorage.getItem('authToken')
   
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')

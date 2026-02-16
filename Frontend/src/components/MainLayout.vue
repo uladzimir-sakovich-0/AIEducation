@@ -41,6 +41,8 @@
 </template>
 
 <script>
+import { authService } from '../services'
+
 export default {
   name: 'MainLayout',
   data() {
@@ -57,13 +59,12 @@ export default {
   },
   computed: {
     userEmail() {
-      return localStorage.getItem('userEmail') || 'User'
+      return authService.getUserEmail() || 'User'
     }
   },
   methods: {
     logout() {
-      localStorage.removeItem('isAuthenticated')
-      localStorage.removeItem('userEmail')
+      authService.logout()
       this.$router.push('/login')
     }
   }
