@@ -1,26 +1,7 @@
 <template>
   <v-app>
-    <!-- Top App Bar -->
-    <v-app-bar elevation="0" class="top-bar">
-      <v-app-bar-nav-icon variant="text" style="visibility: hidden;"></v-app-bar-nav-icon>
-      
-      <v-toolbar-title class="font-weight-semibold">
-        FinanceTracker
-      </v-toolbar-title>
-      
-      <v-spacer></v-spacer>
-      
-      <div class="d-flex align-center">
-        <v-icon size="small" class="mr-2">mdi-account</v-icon>
-        <span class="text-body-2 mr-4">{{ userEmail }}</span>
-        <v-btn icon variant="text" size="small" @click="logout">
-          <v-icon>mdi-logout</v-icon>
-        </v-btn>
-      </div>
-    </v-app-bar>
-
     <!-- Persistent Side Navigation -->
-    <v-navigation-drawer permanent width="240" class="side-nav">
+    <v-navigation-drawer permanent width="220" class="side-nav">
       <!-- User Profile Section -->
       <div class="user-profile">
         <div class="d-flex align-center pa-3">
@@ -54,6 +35,23 @@
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
+
+    <!-- Top App Bar -->
+    <v-app-bar elevation="0" class="top-bar">
+      <v-toolbar-title class="font-weight-semibold ml-4">
+        FinanceTracker
+      </v-toolbar-title>
+      
+      <v-spacer></v-spacer>
+      
+      <div class="d-flex align-center mr-4">
+        <v-icon size="small" class="mr-2">mdi-account</v-icon>
+        <span class="text-body-2 mr-4">{{ userEmail }}</span>
+        <v-btn icon variant="text" size="small" @click="logout">
+          <v-icon>mdi-logout</v-icon>
+        </v-btn>
+      </div>
+    </v-app-bar>
 
     <!-- Main Content -->
     <v-main>
@@ -113,10 +111,14 @@ export default {
 <style scoped>
 .side-nav {
   border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+  z-index: 1001;
 }
 
 .user-profile {
+  height: 64px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
 }
 
 .nav-item {
