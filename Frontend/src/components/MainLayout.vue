@@ -116,7 +116,7 @@ export default {
 
 .user-profile {
   height: 64px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 0px solid rgba(255, 255, 255, 0.12);
   display: flex;
   align-items: center;
 }
