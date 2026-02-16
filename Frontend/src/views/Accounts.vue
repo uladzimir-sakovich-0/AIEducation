@@ -1,96 +1,134 @@
 <template>
   <MainLayout>
-    <v-row>
-      <v-col cols="12">
-        <h1 class="text-h4 mb-4">Accounts</h1>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12">
-        <v-btn color="primary" prepend-icon="mdi-plus" @click="dialog = true">
-          Add Account
-        </v-btn>
-      </v-col>
-    </v-row>
-    <v-row v-if="error">
-      <v-col cols="12">
-        <v-alert type="error" dismissible @click:close="error = null">
-          {{ error }}
-        </v-alert>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12">
-        <v-card>
-          <v-card-text>
-            <v-data-table
-              :headers="headers"
-              :items="accounts"
-              :items-per-page="10"
-              :loading="loading"
-            >
-              <template v-slot:item.balance="{ item }">
-                ${{ item.balance.toFixed(2) }}
-              </template>
-              <template v-slot:item.createdAt="{ item }">
-                {{ formatDate(item.createdAt) }}
-              </template>
-              <template v-slot:item.actions="{ item }">
-                <v-btn icon size="small" @click="editAccount(item)">
-                  <v-icon>mdi-pencil</v-icon>
+    <div class="d-flex justify-space-between align-center mb-6">
+      <div>
+        <h1 class="text-h4 mb-1">Accounts</h1>
+        <p class="text-body-2 text-medium-emphasis">Manage your financial accounts</p>
+      </div>
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="dialog = true">
+        New
+      </v-btn>
+    </div>
+
+    <v-alert
+      v-if="error"
+      type="error"
+      variant="tonal"
+      class="mb-4"
+      closable
+      @click:close="error = null"
+    >
+      {{ error }}
+    </v-alert>
+
+    <!-- Total Balance Card -->
+    <v-card class="elevation-0 mb-6">
+      <v-card-text class="pa-6">
+        <div class="text-body-2 text-medium-emphasis mb-2">Total Balance</div>
+        <div class="text-h3 font-weight-medium">{{ formatCurrency(totalBalance) }}</div>
+      </v-card-text>
+    </v-card>
+
+    <!-- All Accounts Section -->
+    <div class="text-h6 mb-4">All Accounts</div>
+    
+    <v-card class="elevation-0">
+      <v-card-text class="pa-0">
+        <v-table class="custom-table">
+          <thead>
+            <tr>
+              <th>Account Name</th>
+              <th>Type</th>
+              <th>Balance</th>
+              <th>Currency</th>
+              <th>Last Updated</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="loading">
+              <td colspan="6" class="text-center py-8">
+                <v-progress-circular indeterminate color="primary"></v-progress-circular>
+              </td>
+            </tr>
+            <tr v-else-if="accounts.length === 0">
+              <td colspan="6" class="text-center py-8">
+                <p class="text-medium-emphasis">No accounts yet. Click "New" to create one.</p>
+              </td>
+            </tr>
+            <tr v-else v-for="account in accounts" :key="account.id">
+              <td>{{ account.name }}</td>
+              <td>{{ account.accountType }}</td>
+              <td :class="account.balance < 0 ? 'text-error' : ''">
+                {{ formatCurrency(account.balance) }}
+              </td>
+              <td>{{ account.currency || 'USD' }}</td>
+              <td>{{ formatDate(account.updatedAt || account.createdAt) }}</td>
+              <td class="text-right">
+                <v-btn icon variant="text" size="small" @click="editAccount(account)">
+                  <v-icon size="20">mdi-pencil</v-icon>
                 </v-btn>
-                <v-btn icon size="small" color="error" @click="deleteAccount(item)">
-                  <v-icon>mdi-delete</v-icon>
+                <v-btn icon variant="text" size="small" color="error" @click="deleteAccount(account)">
+                  <v-icon size="20">mdi-delete</v-icon>
                 </v-btn>
-              </template>
-              <template v-slot:no-data>
-                <div class="text-center pa-4">
-                  <p>No accounts yet. Click "Add Account" to create one.</p>
-                </div>
-              </template>
-            </v-data-table>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-card-text>
+    </v-card>
 
     <!-- Add/Edit Account Dialog -->
     <v-dialog v-model="dialog" max-width="500px">
       <v-card>
-        <v-card-title>
-          <span class="text-h5">{{ editMode ? 'Edit Account' : 'Add Account' }}</span>
+        <v-card-title class="text-h5 pa-6">
+          {{ editMode ? 'Edit Account' : 'New Account' }}
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-6 pb-2">
           <v-form ref="form">
             <v-text-field
               v-model="formData.name"
               label="Account Name"
               variant="outlined"
+              density="comfortable"
               required
+              class="mb-2"
             ></v-text-field>
             <v-select
               v-model="formData.accountType"
               :items="accountTypes"
               label="Account Type"
               variant="outlined"
+              density="comfortable"
               required
+              class="mb-2"
             ></v-select>
             <v-text-field
               v-model.number="formData.balance"
-              label="Initial Balance"
+              label="Balance"
               type="number"
               step="0.01"
               variant="outlined"
+              density="comfortable"
               required
+              class="mb-2"
             ></v-text-field>
+            <v-select
+              v-model="formData.currency"
+              :items="currencies"
+              label="Currency"
+              variant="outlined"
+              density="comfortable"
+              required
+            ></v-select>
           </v-form>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="px-6 pb-6">
           <v-spacer></v-spacer>
           <v-btn color="grey" variant="text" @click="closeDialog" :disabled="loading">
             Cancel
           </v-btn>
-          <v-btn color="primary" variant="text" @click="saveAccount" :loading="loading">
+          <v-btn color="primary" variant="flat" @click="saveAccount" :loading="loading">
             Save
           </v-btn>
         </v-card-actions>
@@ -112,23 +150,23 @@ export default {
     return {
       dialog: false,
       editMode: false,
-      headers: [
-        { title: 'Name', key: 'name' },
-        { title: 'Type', key: 'accountType' },
-        { title: 'Balance', key: 'balance' },
-        { title: 'Created', key: 'createdAt' },
-        { title: 'Actions', key: 'actions', sortable: false }
-      ],
       accounts: [],
-      accountTypes: ['Cash', 'Bank'],
+      accountTypes: ['Checking', 'Savings', 'Credit', 'Investment'],
+      currencies: ['USD', 'EUR', 'GBP', 'JPY'],
       formData: {
         name: '',
         accountType: '',
-        balance: 0
+        balance: 0,
+        currency: 'USD'
       },
       editingId: null,
       loading: false,
       error: null
+    }
+  },
+  computed: {
+    totalBalance() {
+      return this.accounts.reduce((sum, account) => sum + (account.balance || 0), 0)
     }
   },
   async mounted() {
@@ -153,7 +191,8 @@ export default {
       this.formData = { 
         name: account.name,
         accountType: account.accountType,
-        balance: account.balance
+        balance: account.balance,
+        currency: account.currency || 'USD'
       }
       this.dialog = true
     },
@@ -198,12 +237,52 @@ export default {
       this.formData = {
         name: '',
         accountType: '',
-        balance: 0
+        balance: 0,
+        currency: 'USD'
       }
     },
     formatDate(date) {
-      return new Date(date).toLocaleDateString()
+      if (!date) return '-'
+      return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+    },
+    formatCurrency(amount) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(amount || 0)
     }
   }
 }
 </script>
+
+<style scoped>
+.custom-table {
+  background: transparent !important;
+}
+
+.custom-table thead tr th {
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.custom-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.custom-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+.custom-table tbody tr td {
+  padding: 16px !important;
+  font-size: 0.9375rem;
+}
+</style>
