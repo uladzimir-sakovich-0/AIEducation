@@ -84,6 +84,7 @@
 
 <script>
 import MainLayout from '../components/MainLayout.vue'
+import categoryService from '../services/categoryService'
 
 export default {
   name: 'Categories',
@@ -107,44 +108,16 @@ export default {
       editingId: null
     }
   },
-  computed: {
-    apiBaseUrl() {
-      return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5270'
-    }
-  },
   mounted() {
     this.loadCategories()
   },
   methods: {
-    // Helper method to extract error messages from API responses
-    // Note: This consumes the response body, so it should only be called once per response
-    async handleErrorResponse(response) {
-      let errorMessage = `HTTP error! status: ${response.status}`
-      try {
-        const errorData = await response.json()
-        if (errorData.detail) {
-          errorMessage = errorData.detail
-        } else if (errorData.title) {
-          errorMessage = errorData.title
-        }
-      } catch {
-        // If parsing fails, use the default error message
-      }
-      return errorMessage
-    },
     async loadCategories() {
       this.loading = true
       this.error = null
 
       try {
-        const response = await fetch(`${this.apiBaseUrl}/api/Categories`)
-
-        if (!response.ok) {
-          const errorMessage = await this.handleErrorResponse(response)
-          throw new Error(errorMessage)
-        }
-
-        this.categories = await response.json()
+        this.categories = await categoryService.getAll()
       } catch (err) {
         this.error = err.message || 'Failed to load categories'
         console.error('Error loading categories:', err)
@@ -164,15 +137,8 @@ export default {
       }
 
       try {
-        const response = await fetch(`${this.apiBaseUrl}/api/Categories/${category.id}`, {
-          method: 'DELETE'
-        })
-
-        if (!response.ok) {
-          const errorMessage = await this.handleErrorResponse(response)
-          throw new Error(errorMessage)
-        }
-
+        await categoryService.delete(category.id)
+        
         // Remove from local array after successful deletion
         this.categories = this.categories.filter(c => c.id !== category.id)
       } catch (err) {
@@ -184,22 +150,10 @@ export default {
       try {
         if (this.editMode) {
           // Update existing category
-          // Note: Backend expects PUT /api/Categories with ID in request body (not in URL)
-          const response = await fetch(`${this.apiBaseUrl}/api/Categories`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              id: this.editingId,
-              name: this.formData.name
-            })
+          await categoryService.update({
+            id: this.editingId,
+            name: this.formData.name
           })
-
-          if (!response.ok) {
-            const errorMessage = await this.handleErrorResponse(response)
-            throw new Error(errorMessage)
-          }
 
           // Update local array
           const index = this.categories.findIndex(c => c.id === this.editingId)
@@ -208,22 +162,9 @@ export default {
           }
         } else {
           // Create new category
-          const response = await fetch(`${this.apiBaseUrl}/api/Categories`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              name: this.formData.name
-            })
+          const categoryId = await categoryService.create({
+            name: this.formData.name
           })
-
-          if (!response.ok) {
-            const errorMessage = await this.handleErrorResponse(response)
-            throw new Error(errorMessage)
-          }
-
-          const categoryId = await response.json()
 
           // Add to local array with the ID from the server
           this.categories.push({
