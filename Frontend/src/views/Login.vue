@@ -87,7 +87,7 @@ export default {
         
         // Only navigate if login was successful and we have a token
         if (response && response.token) {
-          this.$router.push('/dashboard')
+          this.$router.push('/transactions')
         } else {
           throw new Error('Login failed: No authentication token received')
         }

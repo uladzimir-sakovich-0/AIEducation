@@ -1,53 +1,59 @@
 <template>
   <MainLayout>
-    <v-row>
-      <v-col cols="12">
-        <h1 class="text-h4 mb-4">System Health</h1>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12" md="8">
-        <v-card>
-          <v-card-title>Health Status</v-card-title>
-          <v-card-text>
-            <v-btn
-              color="primary"
-              @click="checkHealth"
-              :loading="loading"
-              prepend-icon="mdi-refresh"
-            >
-              Check Health
-            </v-btn>
+    <div class="d-flex justify-space-between align-center mb-6">
+      <div>
+        <h1 class="text-h4 mb-1">Healthcheck</h1>
+        <p class="text-body-2 text-medium-emphasis">Monitor system health and status</p>
+      </div>
+      <v-btn
+        color="primary"
+        prepend-icon="mdi-refresh"
+        @click="checkHealth"
+        :loading="loading"
+      >
+        Refresh
+      </v-btn>
+    </div>
 
-            <v-alert
-              v-if="healthData"
-              type="success"
-              variant="tonal"
-              class="mt-4"
-            >
-              <v-alert-title>✓ Service is Healthy</v-alert-title>
-              <div class="mt-2">
-                <p><strong>Status:</strong> {{ healthData.status }}</p>
-                <p><strong>Timestamp:</strong> {{ formatTimestamp(healthData.timestamp) }}</p>
-                <p v-if="healthData.databaseVersion">
-                  <strong>Database Version:</strong> {{ healthData.databaseVersion }}
-                </p>
-              </div>
-            </v-alert>
+    <v-card class="elevation-0">
+      <v-card-text class="pa-6">
+        <v-alert
+          v-if="healthData"
+          type="success"
+          variant="tonal"
+          class="mb-4"
+        >
+          <v-alert-title class="mb-2">✓ Service is Healthy</v-alert-title>
+          <div class="health-details">
+            <div class="health-item">
+              <span class="text-medium-emphasis">Status:</span>
+              <span class="font-weight-medium">{{ healthData.status }}</span>
+            </div>
+            <div class="health-item">
+              <span class="text-medium-emphasis">Timestamp:</span>
+              <span class="font-weight-medium">{{ formatTimestamp(healthData.timestamp) }}</span>
+            </div>
+            <div v-if="healthData.databaseVersion" class="health-item">
+              <span class="text-medium-emphasis">Database Version:</span>
+              <span class="font-weight-medium">{{ healthData.databaseVersion }}</span>
+            </div>
+          </div>
+        </v-alert>
 
-            <v-alert
-              v-if="error"
-              type="error"
-              variant="tonal"
-              class="mt-4"
-            >
-              <v-alert-title>✗ Health Check Failed</v-alert-title>
-              <div class="mt-2">{{ error }}</div>
-            </v-alert>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+        <v-alert
+          v-if="error"
+          type="error"
+          variant="tonal"
+        >
+          <v-alert-title class="mb-2">✗ Health Check Failed</v-alert-title>
+          <div class="text-body-2">{{ error }}</div>
+        </v-alert>
+
+        <div v-if="!healthData && !error && !loading" class="text-center py-8 text-medium-emphasis">
+          Click "Refresh" to check system health
+        </div>
+      </v-card-text>
+    </v-card>
   </MainLayout>
 </template>
 
@@ -96,3 +102,17 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.health-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.health-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+</style>

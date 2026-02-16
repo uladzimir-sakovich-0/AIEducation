@@ -1,79 +1,85 @@
 <template>
   <MainLayout>
-    <v-row>
-      <v-col cols="12">
-        <h1 class="text-h4 mb-4">Categories</h1>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12">
-        <v-btn color="primary" prepend-icon="mdi-plus" @click="dialog = true">
-          Add Category
-        </v-btn>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12">
-        <v-alert
-          v-if="error"
-          type="error"
-          variant="tonal"
-          class="mb-4"
-          closable
-          @click:close="error = null"
-        >
-          {{ error }}
-        </v-alert>
+    <div class="d-flex justify-space-between align-center mb-6">
+      <div>
+        <h1 class="text-h4 mb-1">Categories</h1>
+        <p class="text-body-2 text-medium-emphasis">Organize your transactions</p>
+      </div>
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="dialog = true">
+        New
+      </v-btn>
+    </div>
 
-        <v-card>
-          <v-card-text>
-            <v-data-table
-              :headers="headers"
-              :items="categories"
-              :items-per-page="10"
-              :loading="loading"
-            >
-              <template v-slot:item.actions="{ item }">
-                <v-btn icon size="small" @click="editCategory(item)">
-                  <v-icon>mdi-pencil</v-icon>
+    <v-alert
+      v-if="error"
+      type="error"
+      variant="tonal"
+      class="mb-4"
+      closable
+      @click:close="error = null"
+    >
+      {{ error }}
+    </v-alert>
+
+    <v-card class="elevation-0">
+      <v-card-text class="pa-0">
+        <v-table class="custom-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="loading">
+              <td colspan="2" class="text-center py-8">
+                <v-progress-circular indeterminate color="primary"></v-progress-circular>
+              </td>
+            </tr>
+            <tr v-else-if="categories.length === 0">
+              <td colspan="2" class="text-center py-8">
+                <p class="text-medium-emphasis">No categories yet. Click "New" to create one.</p>
+              </td>
+            </tr>
+            <tr v-else v-for="category in categories" :key="category.id">
+              <td>{{ category.name }}</td>
+              <td class="text-right">
+                <v-btn icon variant="text" size="small" @click="editCategory(category)">
+                  <v-icon size="20">mdi-pencil</v-icon>
                 </v-btn>
-                <v-btn icon size="small" color="error" @click="deleteCategory(item)">
-                  <v-icon>mdi-delete</v-icon>
+                <v-btn icon variant="text" size="small" color="error" @click="deleteCategory(category)">
+                  <v-icon size="20">mdi-delete</v-icon>
                 </v-btn>
-              </template>
-              <template v-slot:no-data>
-                <div class="text-center pa-4">
-                  <p>No categories yet. Click "Add Category" to create one.</p>
-                </div>
-              </template>
-            </v-data-table>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-card-text>
+    </v-card>
 
     <!-- Add/Edit Category Dialog -->
     <v-dialog v-model="dialog" max-width="500px">
       <v-card>
-        <v-card-title>
-          <span class="text-h5">{{ editMode ? 'Edit Category' : 'Add Category' }}</span>
+        <v-card-title class="text-h5 pa-6">
+          {{ editMode ? 'Edit Category' : 'New Category' }}
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-6 pb-2">
           <v-form ref="form">
             <v-text-field
               v-model="formData.name"
               label="Category Name"
               variant="outlined"
+              density="comfortable"
               required
             ></v-text-field>
           </v-form>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="px-6 pb-6">
           <v-spacer></v-spacer>
           <v-btn color="grey" variant="text" @click="closeDialog">
             Cancel
           </v-btn>
-          <v-btn color="primary" variant="text" @click="saveCategory">
+          <v-btn color="primary" variant="flat" @click="saveCategory">
             Save
           </v-btn>
         </v-card-actions>
@@ -97,10 +103,6 @@ export default {
       editMode: false,
       loading: false,
       error: null,
-      headers: [
-        { title: 'Name', key: 'name' },
-        { title: 'Actions', key: 'actions', sortable: false }
-      ],
       categories: [],
       formData: {
         name: ''
@@ -190,3 +192,32 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.custom-table {
+  background: transparent !important;
+}
+
+.custom-table thead tr th {
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.custom-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.custom-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+.custom-table tbody tr td {
+  padding: 10px 16px !important;
+  font-size: 0.9375rem;
+  height: 48px;
+}
+</style>

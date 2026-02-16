@@ -1,66 +1,82 @@
 <template>
   <MainLayout>
-    <v-row>
-      <v-col cols="12">
-        <h1 class="text-h4 mb-4">Transactions</h1>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12">
-        <v-btn color="primary" prepend-icon="mdi-plus" @click="dialog = true">
-          Add Transaction
-        </v-btn>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12">
-        <v-card>
-          <v-card-text>
-            <v-data-table
-              :headers="headers"
-              :items="transactions"
-              :items-per-page="10"
-            >
-              <template v-slot:item.amount="{ item }">
-                <span :class="item.amount < 0 ? 'text-error' : 'text-success'">
-                  ${{ Math.abs(item.amount).toFixed(2) }}
-                </span>
-              </template>
-              <template v-slot:item.timestamp="{ item }">
-                {{ formatDate(item.timestamp) }}
-              </template>
-              <template v-slot:item.actions="{ item }">
-                <v-btn icon size="small" @click="editTransaction(item)">
-                  <v-icon>mdi-pencil</v-icon>
+    <div class="d-flex justify-space-between align-center mb-6">
+      <div>
+        <h1 class="text-h4 mb-1">Transactions</h1>
+        <p class="text-body-2 text-medium-emphasis">View and manage your transaction history</p>
+      </div>
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="dialog = true">
+        New
+      </v-btn>
+    </div>
+
+    <!-- Recent Transactions Section -->
+    <div class="text-h6 mb-4">Recent Transactions</div>
+    
+    <v-card class="elevation-0">
+      <v-card-text class="pa-0">
+        <v-table class="custom-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Notes</th>
+              <th>Account</th>
+              <th>Amount</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="transactions.length === 0">
+              <td colspan="6" class="text-center py-8">
+                <p class="text-medium-emphasis">No transactions yet. Click "New" to create one.</p>
+              </td>
+            </tr>
+            <tr v-else v-for="transaction in transactions" :key="transaction.id">
+              <td>{{ formatDate(transaction.timestamp) }}</td>
+              <td>{{ transaction.category }}</td>
+              <td>{{ transaction.notes || '-' }}</td>
+              <td>{{ transaction.account }}</td>
+              <td :class="transaction.amount < 0 ? 'text-error' : 'text-success'">
+                {{ formatAmount(transaction.amount) }}
+              </td>
+              <td class="text-right">
+                <v-btn icon variant="text" size="small" @click="editTransaction(transaction)">
+                  <v-icon size="20">mdi-pencil</v-icon>
                 </v-btn>
-                <v-btn icon size="small" color="error" @click="deleteTransaction(item)">
-                  <v-icon>mdi-delete</v-icon>
+                <v-btn icon variant="text" size="small" color="error" @click="deleteTransaction(transaction)">
+                  <v-icon size="20">mdi-delete</v-icon>
                 </v-btn>
-              </template>
-              <template v-slot:no-data>
-                <div class="text-center pa-4">
-                  <p>No transactions yet. Click "Add Transaction" to create one.</p>
-                </div>
-              </template>
-            </v-data-table>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-card-text>
+    </v-card>
 
     <!-- Add/Edit Transaction Dialog -->
     <v-dialog v-model="dialog" max-width="500px">
       <v-card>
-        <v-card-title>
-          <span class="text-h5">{{ editMode ? 'Edit Transaction' : 'Add Transaction' }}</span>
+        <v-card-title class="text-h5 pa-6">
+          {{ editMode ? 'Edit Transaction' : 'New Transaction' }}
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-6 pb-2">
           <v-form ref="form">
             <v-text-field
               v-model="formData.account"
               label="Account"
               variant="outlined"
+              density="comfortable"
               required
+              class="mb-2"
+            ></v-text-field>
+            <v-text-field
+              v-model="formData.category"
+              label="Category"
+              variant="outlined"
+              density="comfortable"
+              required
+              class="mb-2"
             ></v-text-field>
             <v-text-field
               v-model.number="formData.amount"
@@ -68,30 +84,27 @@
               type="number"
               step="0.01"
               variant="outlined"
-              hint="Use negative values for expenses"
+              density="comfortable"
+              hint="Use negative values for expenses, positive for income"
               persistent-hint
               required
-            ></v-text-field>
-            <v-text-field
-              v-model="formData.category"
-              label="Category"
-              variant="outlined"
-              required
+              class="mb-2"
             ></v-text-field>
             <v-textarea
               v-model="formData.notes"
               label="Notes"
               variant="outlined"
+              density="comfortable"
               rows="3"
             ></v-textarea>
           </v-form>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="px-6 pb-6">
           <v-spacer></v-spacer>
           <v-btn color="grey" variant="text" @click="closeDialog">
             Cancel
           </v-btn>
-          <v-btn color="primary" variant="text" @click="saveTransaction">
+          <v-btn color="primary" variant="flat" @click="saveTransaction">
             Save
           </v-btn>
         </v-card-actions>
@@ -112,14 +125,6 @@ export default {
     return {
       dialog: false,
       editMode: false,
-      headers: [
-        { title: 'Date', key: 'timestamp' },
-        { title: 'Account', key: 'account' },
-        { title: 'Amount', key: 'amount' },
-        { title: 'Category', key: 'category' },
-        { title: 'Notes', key: 'notes' },
-        { title: 'Actions', key: 'actions', sortable: false }
-      ],
       transactions: [],
       formData: {
         account: '',
@@ -174,8 +179,50 @@ export default {
       }
     },
     formatDate(date) {
-      return new Date(date).toLocaleDateString()
+      if (!date) return '-'
+      const d = new Date(date)
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    },
+    formatAmount(amount) {
+      const absAmount = Math.abs(amount || 0)
+      const formatted = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(absAmount)
+      return amount < 0 ? `-${formatted}` : `+${formatted}`
     }
   }
 }
 </script>
+
+<style scoped>
+.custom-table {
+  background: transparent !important;
+}
+
+.custom-table thead tr th {
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.custom-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.custom-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+.custom-table tbody tr td {
+  padding: 10px 16px !important;
+  font-size: 0.9375rem;
+  height: 48px;
+}
+</style>
