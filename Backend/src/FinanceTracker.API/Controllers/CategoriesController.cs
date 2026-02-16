@@ -1,6 +1,7 @@
 using FinanceTracker.Infrastructure.Models.Requests;
 using FinanceTracker.Infrastructure.Models.Responses;
 using FinanceTracker.Infrastructure.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinanceTracker.API.Controllers;
@@ -10,6 +11,7 @@ namespace FinanceTracker.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class CategoriesController : ControllerBase
 {
     private readonly ICategoryService _categoryService;

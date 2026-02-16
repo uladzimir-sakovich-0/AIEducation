@@ -1,29 +1,46 @@
 @FinanceTracker_API_HostAddress = http://localhost:5270
+@accessToken = your-token-here
 
+###
+# Login Endpoint
+# @name login
+POST {{FinanceTracker_API_HostAddress}}/api/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "admin@gmail.com",
+  "password": "admin"
+}
+
+###
 # Health Check Endpoint
 GET {{FinanceTracker_API_HostAddress}}/api/health
 Accept: application/json
 
 ###
-# Get All Categories Endpoint
+# Get All Categories Endpoint (Requires Authentication)
 GET {{FinanceTracker_API_HostAddress}}/api/categories
 Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 ###
-# Create Category Endpoint
+# Create Category Endpoint (Requires Authentication)
 POST {{FinanceTracker_API_HostAddress}}/api/categories
 Content-Type: application/json
 Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 {
   "name": "test"
 }
 
 ###
-# Update Category Endpoint
+# Update Category Endpoint (Requires Authentication)
 PUT {{FinanceTracker_API_HostAddress}}/api/categories
 Content-Type: application/json
 Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 {
   "id": "00000000-0000-0000-0000-000000000000",
@@ -31,8 +48,9 @@ Accept: application/json
 }
 
 ###
-# Delete Category Endpoint
+# Delete Category Endpoint (Requires Authentication)
 DELETE {{FinanceTracker_API_HostAddress}}/api/categories/00000000-0000-0000-0000-000000000000
 Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 ###

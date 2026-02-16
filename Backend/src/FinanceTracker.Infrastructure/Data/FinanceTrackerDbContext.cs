@@ -1,5 +1,7 @@
 using FinanceTracker.DB.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace FinanceTracker.Infrastructure.Data;
 
@@ -135,5 +137,41 @@ public class FinanceTrackerDbContext : DbContext
                 .HasForeignKey(e => e.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+
+        // Seed data for testing
+        SeedData(modelBuilder);
+    }
+
+    /// <summary>
+    /// Seeds initial data for testing purposes
+    /// </summary>
+    /// <param name="modelBuilder">The model builder</param>
+    private static void SeedData(ModelBuilder modelBuilder)
+    {
+        // Create admin user for testing
+        var adminUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var adminPasswordHash = HashPassword("admin");
+
+        modelBuilder.Entity<User>().HasData(new User
+        {
+            Id = adminUserId,
+            Email = "admin@gmail.com",
+            PasswordHash = adminPasswordHash,
+            IsActive = true,
+            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        });
+    }
+
+    /// <summary>
+    /// Hashes a password using SHA256
+    /// </summary>
+    /// <param name="password">The plain text password</param>
+    /// <returns>The hashed password</returns>
+    private static string HashPassword(string password)
+    {
+        using var sha256 = SHA256.Create();
+        var bytes = Encoding.UTF8.GetBytes(password);
+        var hash = sha256.ComputeHash(bytes);
+        return Convert.ToBase64String(hash);
     }
 }
