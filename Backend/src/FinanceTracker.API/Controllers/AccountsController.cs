@@ -43,7 +43,7 @@ public class AccountsController : BaseApiController
         
         _logger.LogInformation("Account created successfully with ID: {AccountId} for user: {UserId}", accountId, userId);
         
-        return CreatedAtAction(nameof(CreateAccount), new { id = accountId }, accountId);
+        return Created(string.Empty, accountId);
     }
 
     /// <summary>
