@@ -504,7 +504,7 @@ public class TransactionRepositoryTests
     }
 
     [Fact]
-    public async Task WhenUpdatingTransactionAmount_ThenAccountBalanceIsAdjusted()
+    public async Task WhenUpdatingTransactionToLowerAmount_ThenAccountBalanceIsAdjustedByDifference()
     {
         // Arrange
         using var context = GetInMemoryDbContext();
@@ -546,7 +546,7 @@ public class TransactionRepositoryTests
     }
 
     [Fact]
-    public async Task WhenUpdatingTransactionAmountToHigher_ThenAccountBalanceIsIncreasedByDifference()
+    public async Task WhenUpdatingTransactionToHigherAmount_ThenAccountBalanceIsAdjustedByDifference()
     {
         // Arrange
         using var context = GetInMemoryDbContext();
