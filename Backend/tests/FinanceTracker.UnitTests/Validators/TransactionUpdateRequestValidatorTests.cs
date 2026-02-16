@@ -79,7 +79,51 @@ public class TransactionUpdateRequestValidatorTests
 
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.Amount)
-            .WithErrorMessage("Amount is required");
+            .WithErrorMessage("Amount cannot be zero");
+    }
+
+    [Fact]
+    public void WhenAmountIsLessThanOnePenny_ThenValidationFails()
+    {
+        // Arrange
+        var request = new TransactionUpdateRequest
+        {
+            Id = Guid.NewGuid(),
+            AccountId = Guid.NewGuid(),
+            Amount = 0.005m,
+            Timestamp = DateTime.UtcNow,
+            CategoryId = Guid.NewGuid(),
+            Notes = "Test transaction"
+        };
+
+        // Act
+        var result = _validator.TestValidate(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Amount)
+            .WithErrorMessage("Amount must be at least 1 penny (0.01) in absolute value");
+    }
+
+    [Fact]
+    public void WhenNegativeAmountIsLessThanOnePenny_ThenValidationFails()
+    {
+        // Arrange
+        var request = new TransactionUpdateRequest
+        {
+            Id = Guid.NewGuid(),
+            AccountId = Guid.NewGuid(),
+            Amount = -0.005m,
+            Timestamp = DateTime.UtcNow,
+            CategoryId = Guid.NewGuid(),
+            Notes = "Test transaction"
+        };
+
+        // Act
+        var result = _validator.TestValidate(request);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Amount)
+            .WithErrorMessage("Amount must be at least 1 penny (0.01) in absolute value");
     }
 
     [Fact]
