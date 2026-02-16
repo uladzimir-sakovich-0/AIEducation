@@ -141,7 +141,7 @@ export default {
       dialog: false,
       editMode: false,
       accounts: [],
-      accountTypes: ['Checking', 'Savings', 'Credit', 'Investment'],
+      accountTypes: ['Cash', 'Bank'],
       formData: {
         name: '',
         accountType: '',
