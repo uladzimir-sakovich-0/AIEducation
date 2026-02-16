@@ -116,6 +116,20 @@ export default {
     this.loadCategories()
   },
   methods: {
+    async handleErrorResponse(response) {
+      let errorMessage = `HTTP error! status: ${response.status}`
+      try {
+        const errorData = await response.json()
+        if (errorData.detail) {
+          errorMessage = errorData.detail
+        } else if (errorData.title) {
+          errorMessage = errorData.title
+        }
+      } catch {
+        // If parsing fails, use the default error message
+      }
+      return errorMessage
+    },
     async loadCategories() {
       this.loading = true
       this.error = null
@@ -124,7 +138,8 @@ export default {
         const response = await fetch(`${this.apiBaseUrl}/api/Categories`)
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+          const errorMessage = await this.handleErrorResponse(response)
+          throw new Error(errorMessage)
         }
 
         this.categories = await response.json()
@@ -152,15 +167,7 @@ export default {
         })
 
         if (!response.ok) {
-          let errorMessage = `HTTP error! status: ${response.status}`
-          try {
-            const errorData = await response.json()
-            if (errorData.detail) {
-              errorMessage = errorData.detail
-            }
-          } catch {
-            // If parsing fails, use the default error message
-          }
+          const errorMessage = await this.handleErrorResponse(response)
           throw new Error(errorMessage)
         }
 
@@ -187,7 +194,8 @@ export default {
           })
 
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
+            const errorMessage = await this.handleErrorResponse(response)
+            throw new Error(errorMessage)
           }
 
           // Update local array
@@ -208,7 +216,8 @@ export default {
           })
 
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
+            const errorMessage = await this.handleErrorResponse(response)
+            throw new Error(errorMessage)
           }
 
           const categoryId = await response.json()
