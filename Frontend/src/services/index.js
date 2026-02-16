@@ -4,4 +4,5 @@
  */
 
 export { default as apiService } from './apiService'
+export { default as authService } from './authService'
 export { default as categoryService } from './categoryService'

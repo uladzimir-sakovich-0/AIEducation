@@ -4,6 +4,7 @@
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title>Finance Tracker</v-toolbar-title>
       <v-spacer></v-spacer>
+      <span class="mr-4">{{ userEmail }}</span>
       <v-btn icon @click="logout">
         <v-icon>mdi-logout</v-icon>
       </v-btn>
@@ -41,6 +42,8 @@
 </template>
 
 <script>
+import { authService } from '../services'
+
 export default {
   name: 'MainLayout',
   data() {
@@ -57,13 +60,12 @@ export default {
   },
   computed: {
     userEmail() {
-      return localStorage.getItem('userEmail') || 'User'
+      return authService.getUserEmail() || 'User'
     }
   },
   methods: {
     logout() {
-      localStorage.removeItem('isAuthenticated')
-      localStorage.removeItem('userEmail')
+      authService.logout()
       this.$router.push('/login')
     }
   }
