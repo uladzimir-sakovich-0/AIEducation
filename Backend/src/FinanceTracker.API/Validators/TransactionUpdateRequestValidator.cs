@@ -20,11 +20,6 @@ public class TransactionUpdateRequestValidator : AbstractValidator<TransactionUp
             .NotEmpty()
             .WithMessage("Account ID is required");
 
-        // Amount is required (from Transaction entity [Required] attribute)
-        RuleFor(x => x.Amount)
-            .NotEmpty()
-            .WithMessage("Amount is required");
-
         // Amount cannot be zero
         RuleFor(x => x.Amount)
             .NotEqual(0)
