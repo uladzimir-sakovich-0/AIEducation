@@ -229,11 +229,7 @@ export default {
     },
     formatDate(date) {
       if (!date) return '-'
-      return new Date(date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      })
+      return new Date(date).toLocaleDateString()
     },
     formatCurrency(amount) {
       return new Intl.NumberFormat('en-US', {
