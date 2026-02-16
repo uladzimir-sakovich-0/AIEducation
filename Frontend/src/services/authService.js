@@ -45,7 +45,23 @@ class AuthService {
    */
   isAuthenticated() {
     const token = sessionStorage.getItem('authToken')
-    return !!token
+    if (!token) {
+      return false
+    }
+    
+    // Check if token has expired
+    const expiresAt = sessionStorage.getItem('tokenExpiresAt')
+    if (expiresAt) {
+      const expirationDate = new Date(expiresAt)
+      const now = new Date()
+      if (now >= expirationDate) {
+        // Token expired, clear session
+        this.logout()
+        return false
+      }
+    }
+    
+    return true
   }
 
   /**

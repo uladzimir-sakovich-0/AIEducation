@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { authService } from '../services'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
@@ -61,7 +62,7 @@ const router = createRouter({
 
 // Navigation guard for authentication
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = !!sessionStorage.getItem('authToken')
+  const isAuthenticated = authService.isAuthenticated()
   
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')
