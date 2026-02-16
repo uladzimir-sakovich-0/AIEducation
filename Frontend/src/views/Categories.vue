@@ -27,33 +27,22 @@
           <thead>
             <tr>
               <th>Name</th>
-              <th>Color</th>
-              <th>Description</th>
               <th class="text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="4" class="text-center py-8">
+              <td colspan="2" class="text-center py-8">
                 <v-progress-circular indeterminate color="primary"></v-progress-circular>
               </td>
             </tr>
             <tr v-else-if="categories.length === 0">
-              <td colspan="4" class="text-center py-8">
+              <td colspan="2" class="text-center py-8">
                 <p class="text-medium-emphasis">No categories yet. Click "New" to create one.</p>
               </td>
             </tr>
             <tr v-else v-for="category in categories" :key="category.id">
               <td>{{ category.name }}</td>
-              <td>
-                <div class="d-flex align-center">
-                  <span 
-                    class="color-dot" 
-                    :style="{ backgroundColor: category.color || '#6366F1' }"
-                  ></span>
-                </div>
-              </td>
-              <td>{{ category.description || '-' }}</td>
               <td class="text-right">
                 <v-btn icon variant="text" size="small" @click="editCategory(category)">
                   <v-icon size="20">mdi-pencil</v-icon>
@@ -82,23 +71,7 @@
               variant="outlined"
               density="comfortable"
               required
-              class="mb-2"
             ></v-text-field>
-            <v-text-field
-              v-model="formData.color"
-              label="Color"
-              variant="outlined"
-              density="comfortable"
-              type="color"
-              class="mb-2"
-            ></v-text-field>
-            <v-textarea
-              v-model="formData.description"
-              label="Description"
-              variant="outlined"
-              density="comfortable"
-              rows="3"
-            ></v-textarea>
           </v-form>
         </v-card-text>
         <v-card-actions class="px-6 pb-6">
@@ -132,9 +105,7 @@ export default {
       error: null,
       categories: [],
       formData: {
-        name: '',
-        color: '#6366F1',
-        description: ''
+        name: ''
       },
       editingId: null
     }
@@ -183,9 +154,7 @@ export default {
           // Update existing category
           await categoryService.update({
             id: this.editingId,
-            name: this.formData.name,
-            color: this.formData.color,
-            description: this.formData.description
+            name: this.formData.name
           })
 
           // Update local array
@@ -196,17 +165,13 @@ export default {
         } else {
           // Create new category
           const categoryId = await categoryService.create({
-            name: this.formData.name,
-            color: this.formData.color,
-            description: this.formData.description
+            name: this.formData.name
           })
 
           // Add to local array with the ID from the server
           this.categories.push({
             id: categoryId,
-            name: this.formData.name,
-            color: this.formData.color,
-            description: this.formData.description
+            name: this.formData.name
           })
         }
 
@@ -221,9 +186,7 @@ export default {
       this.editMode = false
       this.editingId = null
       this.formData = {
-        name: '',
-        color: '#6366F1',
-        description: ''
+        name: ''
       }
     }
   }
@@ -256,12 +219,5 @@ export default {
   padding: 10px 16px !important;
   font-size: 0.9375rem;
   height: 48px;
-}
-
-.color-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
 }
 </style>
