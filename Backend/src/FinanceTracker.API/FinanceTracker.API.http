@@ -5,6 +5,11 @@ GET {{FinanceTracker.API_HostAddress}}/api/health
 Accept: application/json
 
 ###
+# Get All Categories Endpoint
+GET {{FinanceTracker.API_HostAddress}}/api/categories
+Accept: application/json
+
+###
 # Create Category Endpoint
 POST {{FinanceTracker.API_HostAddress}}/api/categories
 Content-Type: application/json
@@ -24,5 +29,10 @@ Accept: application/json
   "id": "00000000-0000-0000-0000-000000000000",
   "name": "updated test"
 }
+
+###
+# Delete Category Endpoint
+DELETE {{FinanceTracker.API_HostAddress}}/api/categories/00000000-0000-0000-0000-000000000000
+Accept: application/json
 
 ###

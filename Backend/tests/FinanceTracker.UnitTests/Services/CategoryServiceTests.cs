@@ -224,4 +224,219 @@ public class CategoryServiceTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+
+    [Fact]
+    public async Task WhenGettingAllCategories_ThenRepositoryIsCalled()
+    {
+        // Arrange
+        var mockRepository = GetMockRepository();
+        var mockLogger = GetMockLogger();
+        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
+        
+        var categories = new List<Category>
+        {
+            new Category { Id = Guid.NewGuid(), Name = "Food" },
+            new Category { Id = Guid.NewGuid(), Name = "Housing" }
+        };
+        
+        mockRepository
+            .Setup(r => r.GetAllAsync(default))
+            .ReturnsAsync(categories);
+
+        // Act
+        await service.GetAllCategoriesAsync(default);
+
+        // Assert
+        mockRepository.Verify(r => r.GetAllAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenGettingAllCategories_ThenReturnsCategoryDtos()
+    {
+        // Arrange
+        var mockRepository = GetMockRepository();
+        var mockLogger = GetMockLogger();
+        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
+        
+        var categoryId1 = Guid.NewGuid();
+        var categoryId2 = Guid.NewGuid();
+        var categories = new List<Category>
+        {
+            new Category { Id = categoryId1, Name = "Food" },
+            new Category { Id = categoryId2, Name = "Housing" }
+        };
+        
+        mockRepository
+            .Setup(r => r.GetAllAsync(default))
+            .ReturnsAsync(categories);
+
+        // Act
+        var result = await service.GetAllCategoriesAsync(default);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, dto => dto.Id == categoryId1 && dto.Name == "Food");
+        Assert.Contains(result, dto => dto.Id == categoryId2 && dto.Name == "Housing");
+    }
+
+    [Fact]
+    public async Task WhenGettingAllCategories_WithNoCategories_ThenReturnsEmptyList()
+    {
+        // Arrange
+        var mockRepository = GetMockRepository();
+        var mockLogger = GetMockLogger();
+        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
+        
+        mockRepository
+            .Setup(r => r.GetAllAsync(default))
+            .ReturnsAsync(new List<Category>());
+
+        // Act
+        var result = await service.GetAllCategoriesAsync(default);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task WhenGettingAllCategories_ThenLogsInformation()
+    {
+        // Arrange
+        var mockRepository = GetMockRepository();
+        var mockLogger = GetMockLogger();
+        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
+        
+        mockRepository
+            .Setup(r => r.GetAllAsync(default))
+            .ReturnsAsync(new List<Category>());
+
+        // Act
+        await service.GetAllCategoriesAsync(default);
+
+        // Assert
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Retrieving all categories")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithValidId_ThenRepositoryIsCalled()
+    {
+        // Arrange
+        var mockRepository = GetMockRepository();
+        var mockLogger = GetMockLogger();
+        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockRepository
+            .Setup(r => r.DeleteAsync(categoryId, default))
+            .ReturnsAsync(true);
+
+        // Act
+        await service.DeleteCategoryAsync(categoryId, default);
+
+        // Assert
+        mockRepository.Verify(r => r.DeleteAsync(categoryId, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithValidId_ThenReturnsTrue()
+    {
+        // Arrange
+        var mockRepository = GetMockRepository();
+        var mockLogger = GetMockLogger();
+        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockRepository
+            .Setup(r => r.DeleteAsync(categoryId, default))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await service.DeleteCategoryAsync(categoryId, default);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithInvalidId_ThenReturnsFalse()
+    {
+        // Arrange
+        var mockRepository = GetMockRepository();
+        var mockLogger = GetMockLogger();
+        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockRepository
+            .Setup(r => r.DeleteAsync(categoryId, default))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await service.DeleteCategoryAsync(categoryId, default);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithValidId_ThenLogsSuccess()
+    {
+        // Arrange
+        var mockRepository = GetMockRepository();
+        var mockLogger = GetMockLogger();
+        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockRepository
+            .Setup(r => r.DeleteAsync(categoryId, default))
+            .ReturnsAsync(true);
+
+        // Act
+        await service.DeleteCategoryAsync(categoryId, default);
+
+        // Assert
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("deleted successfully")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithInvalidId_ThenLogsWarning()
+    {
+        // Arrange
+        var mockRepository = GetMockRepository();
+        var mockLogger = GetMockLogger();
+        var service = new CategoryService(mockRepository.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockRepository
+            .Setup(r => r.DeleteAsync(categoryId, default))
+            .ReturnsAsync(false);
+
+        // Act
+        await service.DeleteCategoryAsync(categoryId, default);
+
+        // Assert
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("not found for deletion")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
 }
