@@ -116,6 +116,8 @@ export default {
     this.loadCategories()
   },
   methods: {
+    // Helper method to extract error messages from API responses
+    // Note: This consumes the response body, so it should only be called once per response
     async handleErrorResponse(response) {
       let errorMessage = `HTTP error! status: ${response.status}`
       try {
@@ -182,6 +184,7 @@ export default {
       try {
         if (this.editMode) {
           // Update existing category
+          // Note: Backend expects PUT /api/Categories with ID in request body (not in URL)
           const response = await fetch(`${this.apiBaseUrl}/api/Categories`, {
             method: 'PUT',
             headers: {
