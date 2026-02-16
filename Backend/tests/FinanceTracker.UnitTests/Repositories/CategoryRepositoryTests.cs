@@ -225,4 +225,192 @@ public class CategoryRepositoryTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task WhenGettingAllCategories_ThenAllCategoriesAreReturned()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var repository = new CategoryRepository(context, logger.Object);
+        
+        var category1 = new Category { Id = Guid.NewGuid(), Name = "Food" };
+        var category2 = new Category { Id = Guid.NewGuid(), Name = "Housing" };
+        var category3 = new Category { Id = Guid.NewGuid(), Name = "Transportation" };
+        
+        await repository.CreateAsync(category1);
+        await repository.CreateAsync(category2);
+        await repository.CreateAsync(category3);
+
+        // Act
+        var result = await repository.GetAllAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(3, result.Count);
+        Assert.Contains(result, c => c.Name == "Food");
+        Assert.Contains(result, c => c.Name == "Housing");
+        Assert.Contains(result, c => c.Name == "Transportation");
+    }
+
+    [Fact]
+    public async Task WhenGettingAllCategories_WithNoCategories_ThenEmptyListIsReturned()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var repository = new CategoryRepository(context, logger.Object);
+
+        // Act
+        var result = await repository.GetAllAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task WhenGettingAllCategories_ThenLogsInformation()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var repository = new CategoryRepository(context, logger.Object);
+
+        // Act
+        await repository.GetAllAsync();
+
+        // Assert
+        logger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Retrieving all categories")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithValidId_ThenCategoryIsDeletedAndReturnsTrue()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var repository = new CategoryRepository(context, logger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        var category = new Category
+        {
+            Id = categoryId,
+            Name = "Food"
+        };
+        
+        await repository.CreateAsync(category);
+
+        // Act
+        var result = await repository.DeleteAsync(categoryId);
+
+        // Assert
+        Assert.True(result);
+        
+        // Verify it was actually deleted from the database
+        var deletedCategory = await context.Categories.FindAsync(categoryId);
+        Assert.Null(deletedCategory);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithInvalidId_ThenReturnsFalse()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var repository = new CategoryRepository(context, logger.Object);
+        
+        var nonExistentId = Guid.NewGuid();
+
+        // Act
+        var result = await repository.DeleteAsync(nonExistentId);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_ThenOtherCategoriesRemainUnaffected()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var repository = new CategoryRepository(context, logger.Object);
+        
+        var category1Id = Guid.NewGuid();
+        var category2Id = Guid.NewGuid();
+        
+        await repository.CreateAsync(new Category { Id = category1Id, Name = "Category1" });
+        await repository.CreateAsync(new Category { Id = category2Id, Name = "Category2" });
+
+        // Act
+        await repository.DeleteAsync(category1Id);
+
+        // Assert
+        var remainingCategories = await repository.GetAllAsync();
+        Assert.Single(remainingCategories);
+        Assert.Equal("Category2", remainingCategories[0].Name);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithValidId_ThenLogsInformation()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var repository = new CategoryRepository(context, logger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        var category = new Category
+        {
+            Id = categoryId,
+            Name = "Food"
+        };
+        
+        await repository.CreateAsync(category);
+
+        // Act
+        await repository.DeleteAsync(categoryId);
+
+        // Assert
+        logger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("deleted successfully")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithInvalidId_ThenLogsWarning()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var repository = new CategoryRepository(context, logger.Object);
+        
+        var nonExistentId = Guid.NewGuid();
+
+        // Act
+        await repository.DeleteAsync(nonExistentId);
+
+        // Assert
+        logger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("not found for deletion")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
 }

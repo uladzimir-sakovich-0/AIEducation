@@ -22,4 +22,19 @@ public interface ICategoryRepository
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The updated category</returns>
     Task<Category> UpdateAsync(Category category, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all categories from the database
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of all categories</returns>
+    Task<List<Category>> GetAllAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a category from the database
+    /// </summary>
+    /// <param name="id">The ID of the category to delete</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>True if category was found and deleted, false if not found</returns>
+    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 }

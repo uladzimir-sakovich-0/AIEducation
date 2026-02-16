@@ -1,4 +1,5 @@
 using FinanceTracker.Infrastructure.Models.Requests;
+using FinanceTracker.Infrastructure.Models.Responses;
 using FinanceTracker.Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -60,6 +61,55 @@ public class CategoriesController : ControllerBase
         await _categoryService.UpdateCategoryAsync(request, cancellationToken);
         
         _logger.LogInformation("Category updated successfully with ID: {CategoryId}", request.Id);
+        
+        return Ok();
+    }
+
+    /// <summary>
+    /// Gets all categories
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>200 OK with list of categories</returns>
+    [HttpGet]
+    [ProducesResponseType(typeof(List<CategoryDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllCategories(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Received request to get all categories");
+        
+        var categories = await _categoryService.GetAllCategoriesAsync(cancellationToken);
+        
+        _logger.LogInformation("Returning {Count} categories", categories.Count);
+        
+        return Ok(categories);
+    }
+
+    /// <summary>
+    /// Deletes a category
+    /// </summary>
+    /// <param name="id">The ID of the category to delete</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>200 OK when deleted, or 400 Bad Request if not found</returns>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> DeleteCategory(Guid id, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Received request to delete category with ID: {CategoryId}", id);
+        
+        var deleted = await _categoryService.DeleteCategoryAsync(id, cancellationToken);
+        
+        if (!deleted)
+        {
+            _logger.LogWarning("Category with ID {CategoryId} not found", id);
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Category Not Found",
+                Detail = $"Category with ID {id} does not exist.",
+                Status = StatusCodes.Status400BadRequest
+            });
+        }
+        
+        _logger.LogInformation("Category deleted successfully with ID: {CategoryId}", id);
         
         return Ok();
     }

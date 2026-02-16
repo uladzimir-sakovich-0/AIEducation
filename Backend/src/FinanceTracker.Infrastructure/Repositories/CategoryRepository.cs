@@ -1,5 +1,6 @@
 using FinanceTracker.DB.Entities;
 using FinanceTracker.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace FinanceTracker.Infrastructure.Repositories;
@@ -64,5 +65,49 @@ public class CategoryRepository : ICategoryRepository
         _logger.LogInformation("Category updated successfully with ID: {CategoryId}", category.Id);
         
         return trackedEntity ?? category;
+    }
+
+    /// <summary>
+    /// Gets all categories from the database
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of all categories</returns>
+    public async Task<List<Category>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Retrieving all categories from database");
+        
+        var categories = await _context.Categories
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+        
+        _logger.LogInformation("Retrieved {Count} categories from database", categories.Count);
+        
+        return categories;
+    }
+
+    /// <summary>
+    /// Deletes a category from the database
+    /// </summary>
+    /// <param name="id">The ID of the category to delete</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>True if category was found and deleted, false if not found</returns>
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Attempting to delete category with ID: {CategoryId}", id);
+        
+        var category = await _context.Categories.FindAsync(new object[] { id }, cancellationToken);
+        
+        if (category == null)
+        {
+            _logger.LogWarning("Category with ID {CategoryId} not found for deletion", id);
+            return false;
+        }
+        
+        _context.Categories.Remove(category);
+        await _context.SaveChangesAsync(cancellationToken);
+        
+        _logger.LogInformation("Category with ID {CategoryId} deleted successfully", id);
+        
+        return true;
     }
 }

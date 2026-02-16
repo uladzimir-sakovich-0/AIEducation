@@ -1,6 +1,8 @@
 using FinanceTracker.API.Controllers;
 using FinanceTracker.Infrastructure.Models.Requests;
+using FinanceTracker.Infrastructure.Models.Responses;
 using FinanceTracker.Infrastructure.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -217,6 +219,258 @@ public class CategoriesControllerTests
                 LogLevel.Information,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Received request to update category")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenGettingAllCategories_ThenReturnsOkResult()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        mockService
+            .Setup(s => s.GetAllCategoriesAsync(default))
+            .ReturnsAsync(new List<CategoryDto>());
+
+        // Act
+        var result = await controller.GetAllCategories(default);
+
+        // Assert
+        Assert.IsType<OkObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task WhenGettingAllCategories_ThenReturnsCategoryDtos()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        var categories = new List<CategoryDto>
+        {
+            new CategoryDto { Id = Guid.NewGuid(), Name = "Food" },
+            new CategoryDto { Id = Guid.NewGuid(), Name = "Housing" }
+        };
+        
+        mockService
+            .Setup(s => s.GetAllCategoriesAsync(default))
+            .ReturnsAsync(categories);
+
+        // Act
+        var result = await controller.GetAllCategories(default) as OkObjectResult;
+
+        // Assert
+        Assert.NotNull(result);
+        var returnedCategories = result.Value as List<CategoryDto>;
+        Assert.NotNull(returnedCategories);
+        Assert.Equal(2, returnedCategories.Count);
+    }
+
+    [Fact]
+    public async Task WhenGettingAllCategories_WithNoCategories_ThenReturnsEmptyList()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        mockService
+            .Setup(s => s.GetAllCategoriesAsync(default))
+            .ReturnsAsync(new List<CategoryDto>());
+
+        // Act
+        var result = await controller.GetAllCategories(default) as OkObjectResult;
+
+        // Assert
+        Assert.NotNull(result);
+        var returnedCategories = result.Value as List<CategoryDto>;
+        Assert.NotNull(returnedCategories);
+        Assert.Empty(returnedCategories);
+    }
+
+    [Fact]
+    public async Task WhenGettingAllCategories_ThenServiceIsCalled()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        mockService
+            .Setup(s => s.GetAllCategoriesAsync(default))
+            .ReturnsAsync(new List<CategoryDto>());
+
+        // Act
+        await controller.GetAllCategories(default);
+
+        // Assert
+        mockService.Verify(s => s.GetAllCategoriesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenGettingAllCategories_ThenLogsInformation()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        mockService
+            .Setup(s => s.GetAllCategoriesAsync(default))
+            .ReturnsAsync(new List<CategoryDto>());
+
+        // Act
+        await controller.GetAllCategories(default);
+
+        // Assert
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Received request to get all categories")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithValidId_ThenReturnsOkResult()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockService
+            .Setup(s => s.DeleteCategoryAsync(categoryId, default))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await controller.DeleteCategory(categoryId, default);
+
+        // Assert
+        Assert.IsType<OkResult>(result);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithInvalidId_ThenReturnsBadRequest()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockService
+            .Setup(s => s.DeleteCategoryAsync(categoryId, default))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await controller.DeleteCategory(categoryId, default);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithInvalidId_ThenReturnsProblemDetails()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockService
+            .Setup(s => s.DeleteCategoryAsync(categoryId, default))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await controller.DeleteCategory(categoryId, default) as BadRequestObjectResult;
+
+        // Assert
+        Assert.NotNull(result);
+        var problemDetails = result.Value as ProblemDetails;
+        Assert.NotNull(problemDetails);
+        Assert.Equal("Category Not Found", problemDetails.Title);
+        Assert.Equal(StatusCodes.Status400BadRequest, problemDetails.Status);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_ThenServiceIsCalledWithCorrectId()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockService
+            .Setup(s => s.DeleteCategoryAsync(categoryId, default))
+            .ReturnsAsync(true);
+
+        // Act
+        await controller.DeleteCategory(categoryId, default);
+
+        // Assert
+        mockService.Verify(s => s.DeleteCategoryAsync(categoryId, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithValidId_ThenLogsInformation()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockService
+            .Setup(s => s.DeleteCategoryAsync(categoryId, default))
+            .ReturnsAsync(true);
+
+        // Act
+        await controller.DeleteCategory(categoryId, default);
+
+        // Assert
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Received request to delete category")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenDeletingCategory_WithInvalidId_ThenLogsWarning()
+    {
+        // Arrange
+        var mockService = GetMockCategoryService();
+        var mockLogger = GetMockLogger();
+        var controller = new CategoriesController(mockService.Object, mockLogger.Object);
+        
+        var categoryId = Guid.NewGuid();
+        mockService
+            .Setup(s => s.DeleteCategoryAsync(categoryId, default))
+            .ReturnsAsync(false);
+
+        // Act
+        await controller.DeleteCategory(categoryId, default);
+
+        // Assert
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("not found")),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
