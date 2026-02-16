@@ -1,15 +1,34 @@
 <template>
   <v-app>
+    <!-- Top App Bar -->
+    <v-app-bar elevation="0" class="top-bar">
+      <v-app-bar-nav-icon variant="text" style="visibility: hidden;"></v-app-bar-nav-icon>
+      
+      <v-toolbar-title class="font-weight-semibold">
+        FinanceTracker
+      </v-toolbar-title>
+      
+      <v-spacer></v-spacer>
+      
+      <div class="d-flex align-center">
+        <v-icon size="small" class="mr-2">mdi-account</v-icon>
+        <span class="text-body-2 mr-4">{{ userEmail }}</span>
+        <v-btn icon variant="text" size="small" @click="logout">
+          <v-icon>mdi-logout</v-icon>
+        </v-btn>
+      </div>
+    </v-app-bar>
+
     <!-- Persistent Side Navigation -->
     <v-navigation-drawer permanent width="240" class="side-nav">
       <!-- User Profile Section -->
-      <div class="user-profile pa-4">
-        <div class="d-flex align-center">
-          <v-avatar color="primary" size="40" class="mr-3">
-            <span class="text-body-1">{{ userInitials }}</span>
+      <div class="user-profile">
+        <div class="d-flex align-center pa-3">
+          <v-avatar color="primary" size="32" class="mr-2">
+            <span class="text-body-2">{{ userInitials }}</span>
           </v-avatar>
           <div class="flex-grow-1">
-            <div class="text-body-1 font-weight-medium">{{ userName }}</div>
+            <div class="text-body-2 font-weight-medium">{{ userName }}</div>
             <div class="text-caption text-medium-emphasis">{{ userEmail }}</div>
           </div>
         </div>
@@ -35,25 +54,6 @@
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
-
-    <!-- Top App Bar -->
-    <v-app-bar elevation="0" class="top-bar px-4">
-      <v-app-bar-nav-icon variant="text" style="visibility: hidden;"></v-app-bar-nav-icon>
-      
-      <v-toolbar-title class="font-weight-semibold">
-        FinanceTracker
-      </v-toolbar-title>
-      
-      <v-spacer></v-spacer>
-      
-      <div class="d-flex align-center">
-        <v-icon size="small" class="mr-2">mdi-account</v-icon>
-        <span class="text-body-2 mr-4">{{ userEmail }}</span>
-        <v-btn icon variant="text" size="small" @click="logout">
-          <v-icon>mdi-logout</v-icon>
-        </v-btn>
-      </div>
-    </v-app-bar>
 
     <!-- Main Content -->
     <v-main>
