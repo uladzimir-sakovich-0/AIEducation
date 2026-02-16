@@ -62,34 +62,62 @@
         </v-card-title>
         <v-card-text class="px-6 pb-2">
           <v-form ref="form">
-            <v-text-field
-              v-model="formData.account"
+            <v-select
+              v-model="formData.accountId"
+              :items="sortedAccounts"
+              item-title="name"
+              item-value="id"
               label="Account"
               variant="outlined"
               density="comfortable"
               required
               class="mb-2"
-            ></v-text-field>
-            <v-text-field
-              v-model="formData.category"
+            ></v-select>
+            <v-select
+              v-model="formData.categoryId"
+              :items="sortedCategories"
+              item-title="name"
+              item-value="id"
               label="Category"
               variant="outlined"
               density="comfortable"
               required
               class="mb-2"
-            ></v-text-field>
+            ></v-select>
+            <v-radio-group
+              v-model="operationType"
+              inline
+              class="mb-2"
+            >
+              <v-radio
+                label="Expense"
+                value="expense"
+                color="error"
+              ></v-radio>
+              <v-radio
+                label="Income"
+                value="income"
+                color="success"
+              ></v-radio>
+            </v-radio-group>
             <v-text-field
-              v-model.number="formData.amount"
+              v-model.number="amountValue"
               label="Amount"
               type="number"
               step="0.01"
               variant="outlined"
               density="comfortable"
-              hint="Use negative values for expenses, positive for income"
-              persistent-hint
               required
               class="mb-2"
-            ></v-text-field>
+              :color="operationType === 'income' ? 'success' : 'error'"
+              :class="operationType === 'income' ? 'income-input' : 'expense-input'"
+            >
+              <template v-slot:prepend-inner>
+                <span :class="operationType === 'income' ? 'text-success' : 'text-error'">
+                  {{ operationType === 'income' ? '+' : '-' }}
+                </span>
+              </template>
+            </v-text-field>
             <v-textarea
               v-model="formData.notes"
               label="Notes"
@@ -115,6 +143,8 @@
 
 <script>
 import MainLayout from '../components/MainLayout.vue'
+import accountService from '../services/accountService'
+import categoryService from '../services/categoryService'
 
 export default {
   name: 'Transactions',
@@ -126,20 +156,56 @@ export default {
       dialog: false,
       editMode: false,
       transactions: [],
+      accounts: [],
+      categories: [],
       formData: {
-        account: '',
-        amount: 0,
-        category: '',
+        accountId: null,
+        categoryId: null,
         notes: ''
       },
+      operationType: 'expense',
+      amountValue: 0,
       editingId: null
     }
   },
+  computed: {
+    sortedAccounts() {
+      return [...this.accounts].sort((a, b) => a.name.localeCompare(b.name))
+    },
+    sortedCategories() {
+      return [...this.categories].sort((a, b) => a.name.localeCompare(b.name))
+    }
+  },
+  mounted() {
+    this.loadAccounts()
+    this.loadCategories()
+  },
   methods: {
+    async loadAccounts() {
+      try {
+        this.accounts = await accountService.getAll()
+      } catch (err) {
+        console.error('Error loading accounts:', err)
+      }
+    },
+    async loadCategories() {
+      try {
+        this.categories = await categoryService.getAll()
+      } catch (err) {
+        console.error('Error loading categories:', err)
+      }
+    },
     editTransaction(transaction) {
       this.editMode = true
       this.editingId = transaction.id
-      this.formData = { ...transaction }
+      this.formData = { 
+        accountId: transaction.accountId,
+        categoryId: transaction.categoryId,
+        notes: transaction.notes 
+      }
+      // Set operation type based on amount
+      this.operationType = transaction.amount >= 0 ? 'income' : 'expense'
+      this.amountValue = Math.abs(transaction.amount)
       this.dialog = true
     },
     deleteTransaction(transaction) {
@@ -148,12 +214,21 @@ export default {
       }
     },
     saveTransaction() {
+      // Calculate the actual amount based on operation type
+      const actualAmount = this.operationType === 'income' ? this.amountValue : -this.amountValue
+      
+      const account = this.accounts.find(a => a.id === this.formData.accountId)
+      const category = this.categories.find(c => c.id === this.formData.categoryId)
+      
       if (this.editMode) {
         const index = this.transactions.findIndex(t => t.id === this.editingId)
         if (index !== -1) {
           const originalTransaction = this.transactions[index]
           this.transactions[index] = { 
-            ...this.formData, 
+            ...this.formData,
+            amount: actualAmount,
+            account: account?.name || '',
+            category: category?.name || '',
             id: this.editingId,
             timestamp: originalTransaction.timestamp
           }
@@ -161,6 +236,9 @@ export default {
       } else {
         this.transactions.push({
           ...this.formData,
+          amount: actualAmount,
+          account: account?.name || '',
+          category: category?.name || '',
           id: Date.now(),
           timestamp: new Date().toISOString()
         })
@@ -172,11 +250,12 @@ export default {
       this.editMode = false
       this.editingId = null
       this.formData = {
-        account: '',
-        amount: 0,
-        category: '',
+        accountId: null,
+        categoryId: null,
         notes: ''
       }
+      this.operationType = 'expense'
+      this.amountValue = 0
     },
     formatDate(date) {
       if (!date) return '-'
@@ -224,5 +303,31 @@ export default {
   padding: 10px 16px !important;
   font-size: 0.9375rem;
   height: 48px;
+}
+
+/* Income input - green border */
+.income-input :deep(.v-field--variant-outlined .v-field__outline__start),
+.income-input :deep(.v-field--variant-outlined .v-field__outline__notch),
+.income-input :deep(.v-field--variant-outlined .v-field__outline__end) {
+  border-color: rgb(var(--v-theme-success)) !important;
+}
+
+.income-input :deep(.v-field--variant-outlined.v-field--focused .v-field__outline__start),
+.income-input :deep(.v-field--variant-outlined.v-field--focused .v-field__outline__notch),
+.income-input :deep(.v-field--variant-outlined.v-field--focused .v-field__outline__end) {
+  border-color: rgb(var(--v-theme-success)) !important;
+}
+
+/* Expense input - red border */
+.expense-input :deep(.v-field--variant-outlined .v-field__outline__start),
+.expense-input :deep(.v-field--variant-outlined .v-field__outline__notch),
+.expense-input :deep(.v-field--variant-outlined .v-field__outline__end) {
+  border-color: rgb(var(--v-theme-error)) !important;
+}
+
+.expense-input :deep(.v-field--variant-outlined.v-field--focused .v-field__outline__start),
+.expense-input :deep(.v-field--variant-outlined.v-field--focused .v-field__outline__notch),
+.expense-input :deep(.v-field--variant-outlined.v-field--focused .v-field__outline__end) {
+  border-color: rgb(var(--v-theme-error)) !important;
 }
 </style>
