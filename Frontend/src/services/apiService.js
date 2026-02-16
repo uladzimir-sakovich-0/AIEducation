@@ -116,7 +116,7 @@ class ApiService {
       throw new Error(errorMessage)
     }
 
-    // PUT returns 200 OK with no content
+    // PUT may return 200 OK with content or 204 No Content
     if (response.status !== 204) {
       return response.json().catch(() => null)
     }
@@ -138,7 +138,7 @@ class ApiService {
       throw new Error(errorMessage)
     }
 
-    // DELETE returns 200 OK with no content
+    // DELETE may return 200 OK with content or 204 No Content
     if (response.status !== 204) {
       return response.json().catch(() => null)
     }
