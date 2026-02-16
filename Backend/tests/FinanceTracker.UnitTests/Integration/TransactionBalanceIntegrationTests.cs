@@ -168,7 +168,7 @@ public class TransactionBalanceIntegrationTests
     }
 
     [Fact]
-    public async Task WhenUpdatingTransactionFromLowerToHigher_ThenBalanceIsDecreased()
+    public async Task WhenUpdatingTransactionFromLowerToHigher_ThenBalanceIsIncreased()
     {
         // Arrange - Account with 100$, existing transaction of 50$
         using var context = GetInMemoryDbContext();
