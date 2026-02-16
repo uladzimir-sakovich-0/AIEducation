@@ -107,6 +107,11 @@ export default {
       editingId: null
     }
   },
+  computed: {
+    apiBaseUrl() {
+      return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5270'
+    }
+  },
   mounted() {
     this.loadCategories()
   },
@@ -116,8 +121,7 @@ export default {
       this.error = null
 
       try {
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5270'
-        const response = await fetch(`${apiBaseUrl}/api/Categories`)
+        const response = await fetch(`${this.apiBaseUrl}/api/Categories`)
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
@@ -143,14 +147,21 @@ export default {
       }
 
       try {
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5270'
-        const response = await fetch(`${apiBaseUrl}/api/Categories/${category.id}`, {
+        const response = await fetch(`${this.apiBaseUrl}/api/Categories/${category.id}`, {
           method: 'DELETE'
         })
 
         if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.detail || `HTTP error! status: ${response.status}`)
+          let errorMessage = `HTTP error! status: ${response.status}`
+          try {
+            const errorData = await response.json()
+            if (errorData.detail) {
+              errorMessage = errorData.detail
+            }
+          } catch {
+            // If parsing fails, use the default error message
+          }
+          throw new Error(errorMessage)
         }
 
         // Remove from local array after successful deletion
@@ -158,16 +169,13 @@ export default {
       } catch (err) {
         this.error = err.message || 'Failed to delete category'
         console.error('Error deleting category:', err)
-        alert(`Failed to delete category: ${err.message}`)
       }
     },
     async saveCategory() {
       try {
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5270'
-
         if (this.editMode) {
           // Update existing category
-          const response = await fetch(`${apiBaseUrl}/api/Categories`, {
+          const response = await fetch(`${this.apiBaseUrl}/api/Categories`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json'
@@ -189,7 +197,7 @@ export default {
           }
         } else {
           // Create new category
-          const response = await fetch(`${apiBaseUrl}/api/Categories`, {
+          const response = await fetch(`${this.apiBaseUrl}/api/Categories`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -216,7 +224,6 @@ export default {
       } catch (err) {
         this.error = err.message || 'Failed to save category'
         console.error('Error saving category:', err)
-        alert(`Failed to save category: ${err.message}`)
       }
     },
     closeDialog() {
