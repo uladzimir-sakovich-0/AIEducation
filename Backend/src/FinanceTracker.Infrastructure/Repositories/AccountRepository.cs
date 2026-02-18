@@ -117,4 +117,32 @@ public class AccountRepository : IAccountRepository
         
         return true;
     }
+
+    /// <summary>
+    /// Updates the balance of an account by adding the specified amount
+    /// </summary>
+    /// <param name="accountId">The ID of the account to update</param>
+    /// <param name="amount">The amount to add to the balance (can be negative to subtract)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>True if account was found and balance was updated; false otherwise</returns>
+    public async Task<bool> UpdateBalanceAsync(Guid accountId, decimal amount, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Updating balance for account {AccountId} by {Amount}", accountId, amount);
+        
+        var account = await _context.Accounts
+            .FirstOrDefaultAsync(a => a.Id == accountId, cancellationToken);
+        
+        if (account == null)
+        {
+            _logger.LogWarning("Account with ID {AccountId} not found", accountId);
+            return false;
+        }
+        
+        account.Balance += amount;
+        await _context.SaveChangesAsync(cancellationToken);
+        
+        _logger.LogInformation("Balance updated for account {AccountId}. New balance: {Balance}", accountId, account.Balance);
+        
+        return true;
+    }
 }

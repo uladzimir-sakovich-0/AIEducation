@@ -40,4 +40,13 @@ public interface IAccountRepository
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>True if account was found, belongs to user, and was deleted; false otherwise</returns>
     Task<bool> DeleteAsync(Guid id, Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates the balance of an account by adding the specified amount
+    /// </summary>
+    /// <param name="accountId">The ID of the account to update</param>
+    /// <param name="amount">The amount to add to the balance (can be negative to subtract)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>True if account was found and balance was updated; false otherwise</returns>
+    Task<bool> UpdateBalanceAsync(Guid accountId, decimal amount, CancellationToken cancellationToken = default);
 }
