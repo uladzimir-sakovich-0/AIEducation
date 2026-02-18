@@ -504,7 +504,7 @@ public class TransactionRepositoryTests
     }
 
     [Fact]
-    public async Task WhenUpdatingTransactionToLowerAmount_ThenAccountBalanceIsAdjustedByDifference()
+    public async Task WhenUpdatingIncomeToLowerAmount_ThenAccountBalanceIsAdjustedByDifference()
     {
         // Arrange
         using var context = GetInMemoryDbContext();
@@ -520,7 +520,7 @@ public class TransactionRepositoryTests
         {
             Id = transactionId,
             AccountId = account.Id,
-            Amount = 50.00m,
+            Amount = 50.00m, // Income of 50
             Timestamp = DateTime.UtcNow,
             CategoryId = category.Id,
             Notes = "Original transaction"
@@ -529,24 +529,24 @@ public class TransactionRepositoryTests
         await repository.CreateAsync(transaction, CancellationToken.None);
         accountRepository.Invocations.Clear(); // Clear previous invocations
 
-        // Act - Update amount from 50 to 40
+        // Act - Update income from 50 to 40 (receiving 10 less)
         var updatedTransaction = new Transaction
         {
             Id = transactionId,
             AccountId = account.Id,
-            Amount = 40.00m,
+            Amount = 40.00m, // Income of 40
             Timestamp = DateTime.UtcNow,
             CategoryId = category.Id,
             Notes = "Updated transaction"
         };
         await repository.UpdateAsync(updatedTransaction, _testUserId, CancellationToken.None);
 
-        // Assert - Balance should be adjusted by (40 - 50) = -10
+        // Assert - Balance should be adjusted by (40 - 50) = -10 (less income, balance down)
         accountRepository.Verify(r => r.UpdateBalanceAsync(account.Id, -10.00m, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task WhenUpdatingTransactionToHigherAmount_ThenAccountBalanceIsAdjustedByDifference()
+    public async Task WhenUpdatingIncomeToHigherAmount_ThenAccountBalanceIsAdjustedByDifference()
     {
         // Arrange
         using var context = GetInMemoryDbContext();
@@ -562,7 +562,7 @@ public class TransactionRepositoryTests
         {
             Id = transactionId,
             AccountId = account.Id,
-            Amount = 50.00m,
+            Amount = 50.00m, // Income of 50
             Timestamp = DateTime.UtcNow,
             CategoryId = category.Id,
             Notes = "Original transaction"
@@ -571,20 +571,104 @@ public class TransactionRepositoryTests
         await repository.CreateAsync(transaction, CancellationToken.None);
         accountRepository.Invocations.Clear(); // Clear previous invocations
 
-        // Act - Update amount from 50 to 80
+        // Act - Update income from 50 to 80 (receiving 30 more)
         var updatedTransaction = new Transaction
         {
             Id = transactionId,
             AccountId = account.Id,
-            Amount = 80.00m,
+            Amount = 80.00m, // Income of 80
             Timestamp = DateTime.UtcNow,
             CategoryId = category.Id,
             Notes = "Updated transaction"
         };
         await repository.UpdateAsync(updatedTransaction, _testUserId, CancellationToken.None);
 
-        // Assert - Balance should be adjusted by (80 - 50) = 30
+        // Assert - Balance should be adjusted by (80 - 50) = 30 (more income, balance up)
         accountRepository.Verify(r => r.UpdateBalanceAsync(account.Id, 30.00m, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenUpdatingExpenseToHigherAmount_ThenAccountBalanceIsDecreased()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var accountRepository = GetMockAccountRepository();
+        var repository = new TransactionRepository(context, logger.Object, accountRepository.Object);
+        
+        var account = await CreateTestAccount(context, _testUserId);
+        var category = await CreateTestCategory(context, _testUserId);
+        
+        var transactionId = Guid.NewGuid();
+        var transaction = new Transaction
+        {
+            Id = transactionId,
+            AccountId = account.Id,
+            Amount = -50.00m, // Expense of 50
+            Timestamp = DateTime.UtcNow,
+            CategoryId = category.Id,
+            Notes = "Original expense"
+        };
+        
+        await repository.CreateAsync(transaction, CancellationToken.None);
+        accountRepository.Invocations.Clear(); // Clear previous invocations
+
+        // Act - Update expense from -50 to -80 (spending 30 more)
+        var updatedTransaction = new Transaction
+        {
+            Id = transactionId,
+            AccountId = account.Id,
+            Amount = -80.00m, // Expense of 80
+            Timestamp = DateTime.UtcNow,
+            CategoryId = category.Id,
+            Notes = "Updated expense"
+        };
+        await repository.UpdateAsync(updatedTransaction, _testUserId, CancellationToken.None);
+
+        // Assert - Balance should be adjusted by (-80 - (-50)) = -30 (spend more, balance down)
+        accountRepository.Verify(r => r.UpdateBalanceAsync(account.Id, -30.00m, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task WhenUpdatingExpenseToLowerAmount_ThenAccountBalanceIsIncreased()
+    {
+        // Arrange
+        using var context = GetInMemoryDbContext();
+        var logger = GetMockLogger();
+        var accountRepository = GetMockAccountRepository();
+        var repository = new TransactionRepository(context, logger.Object, accountRepository.Object);
+        
+        var account = await CreateTestAccount(context, _testUserId);
+        var category = await CreateTestCategory(context, _testUserId);
+        
+        var transactionId = Guid.NewGuid();
+        var transaction = new Transaction
+        {
+            Id = transactionId,
+            AccountId = account.Id,
+            Amount = -50.00m, // Expense of 50
+            Timestamp = DateTime.UtcNow,
+            CategoryId = category.Id,
+            Notes = "Original expense"
+        };
+        
+        await repository.CreateAsync(transaction, CancellationToken.None);
+        accountRepository.Invocations.Clear(); // Clear previous invocations
+
+        // Act - Update expense from -50 to -40 (spending 10 less)
+        var updatedTransaction = new Transaction
+        {
+            Id = transactionId,
+            AccountId = account.Id,
+            Amount = -40.00m, // Expense of 40
+            Timestamp = DateTime.UtcNow,
+            CategoryId = category.Id,
+            Notes = "Updated expense"
+        };
+        await repository.UpdateAsync(updatedTransaction, _testUserId, CancellationToken.None);
+
+        // Assert - Balance should be adjusted by (-40 - (-50)) = +10 (spend less, balance up)
+        accountRepository.Verify(r => r.UpdateBalanceAsync(account.Id, 10.00m, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

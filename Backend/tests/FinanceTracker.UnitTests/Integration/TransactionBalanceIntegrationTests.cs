@@ -123,9 +123,9 @@ public class TransactionBalanceIntegrationTests
     }
 
     [Fact]
-    public async Task WhenUpdatingTransactionToLowerAmount_ThenBalanceIsDecreased()
+    public async Task WhenUpdatingIncomeToLowerAmount_ThenBalanceIsDecreased()
     {
-        // Arrange - Account with 100$, existing transaction of 50$
+        // Arrange - Account with 100$, existing income of 50$
         using var context = GetInMemoryDbContext();
         var accountRepository = new AccountRepository(context, GetMockAccountLogger().Object);
         var transactionRepository = new TransactionRepository(context, GetMockTransactionLogger().Object, accountRepository);
@@ -138,26 +138,26 @@ public class TransactionBalanceIntegrationTests
         {
             Id = transactionId,
             AccountId = account.Id,
-            Amount = 50.00m,
+            Amount = 50.00m, // Income of 50
             Timestamp = DateTime.UtcNow,
             CategoryId = category.Id,
-            Notes = "Original transaction"
+            Notes = "Original income"
         };
         await transactionRepository.CreateAsync(transaction, CancellationToken.None);
 
-        // Verify balance after creating 50$ transaction: 100 + 50 = 150
+        // Verify balance after creating 50$ income: 100 + 50 = 150
         var accountAfterCreate = await context.Accounts.FindAsync(account.Id);
         Assert.Equal(150.00m, accountAfterCreate!.Balance);
 
-        // Act - Update transaction from 50$ to 40$
+        // Act - Update income from 50$ to 40$ (receiving 10$ less)
         var updatedTransaction = new Transaction
         {
             Id = transactionId,
             AccountId = account.Id,
-            Amount = 40.00m,
+            Amount = 40.00m, // Income of 40
             Timestamp = DateTime.UtcNow,
             CategoryId = category.Id,
-            Notes = "Updated transaction"
+            Notes = "Updated income"
         };
         await transactionRepository.UpdateAsync(updatedTransaction, _testUserId, CancellationToken.None);
 
@@ -168,9 +168,9 @@ public class TransactionBalanceIntegrationTests
     }
 
     [Fact]
-    public async Task WhenUpdatingTransactionToHigherAmount_ThenBalanceIsIncreased()
+    public async Task WhenUpdatingIncomeToHigherAmount_ThenBalanceIsIncreased()
     {
-        // Arrange - Account with 100$, existing transaction of 50$
+        // Arrange - Account with 100$, existing income of 50$
         using var context = GetInMemoryDbContext();
         var accountRepository = new AccountRepository(context, GetMockAccountLogger().Object);
         var transactionRepository = new TransactionRepository(context, GetMockTransactionLogger().Object, accountRepository);
@@ -183,26 +183,26 @@ public class TransactionBalanceIntegrationTests
         {
             Id = transactionId,
             AccountId = account.Id,
-            Amount = 50.00m,
+            Amount = 50.00m, // Income of 50
             Timestamp = DateTime.UtcNow,
             CategoryId = category.Id,
-            Notes = "Original transaction"
+            Notes = "Original income"
         };
         await transactionRepository.CreateAsync(transaction, CancellationToken.None);
 
-        // Verify balance after creating 50$ transaction: 100 + 50 = 150
+        // Verify balance after creating 50$ income: 100 + 50 = 150
         var accountAfterCreate = await context.Accounts.FindAsync(account.Id);
         Assert.Equal(150.00m, accountAfterCreate!.Balance);
 
-        // Act - Update transaction from 50$ to 80$
+        // Act - Update income from 50$ to 80$ (receiving 30$ more)
         var updatedTransaction = new Transaction
         {
             Id = transactionId,
             AccountId = account.Id,
-            Amount = 80.00m,
+            Amount = 80.00m, // Income of 80
             Timestamp = DateTime.UtcNow,
             CategoryId = category.Id,
-            Notes = "Updated transaction"
+            Notes = "Updated income"
         };
         await transactionRepository.UpdateAsync(updatedTransaction, _testUserId, CancellationToken.None);
 
@@ -246,6 +246,96 @@ public class TransactionBalanceIntegrationTests
         var finalAccount = await context.Accounts.FindAsync(account.Id);
         Assert.NotNull(finalAccount);
         Assert.Equal(100.00m, finalAccount.Balance);
+    }
+
+    [Fact]
+    public async Task WhenUpdatingExpenseToHigherAmount_ThenBalanceDecreasesByDifference()
+    {
+        // Arrange - Account with 100$, existing expense of -50$
+        using var context = GetInMemoryDbContext();
+        var accountRepository = new AccountRepository(context, GetMockAccountLogger().Object);
+        var transactionRepository = new TransactionRepository(context, GetMockTransactionLogger().Object, accountRepository);
+        
+        var account = await CreateTestAccount(context, _testUserId, initialBalance: 100.00m);
+        var category = await CreateTestCategory(context, _testUserId);
+        
+        var transactionId = Guid.NewGuid();
+        var transaction = new Transaction
+        {
+            Id = transactionId,
+            AccountId = account.Id,
+            Amount = -50.00m, // Expense of 50
+            Timestamp = DateTime.UtcNow,
+            CategoryId = category.Id,
+            Notes = "Original expense"
+        };
+        await transactionRepository.CreateAsync(transaction, CancellationToken.None);
+
+        // Verify balance after creating -50$ expense: 100 - 50 = 50
+        var accountAfterCreate = await context.Accounts.FindAsync(account.Id);
+        Assert.Equal(50.00m, accountAfterCreate!.Balance);
+
+        // Act - Update expense from -50$ to -80$ (spending 30$ more)
+        var updatedTransaction = new Transaction
+        {
+            Id = transactionId,
+            AccountId = account.Id,
+            Amount = -80.00m, // Expense of 80
+            Timestamp = DateTime.UtcNow,
+            CategoryId = category.Id,
+            Notes = "Updated expense"
+        };
+        await transactionRepository.UpdateAsync(updatedTransaction, _testUserId, CancellationToken.None);
+
+        // Assert - Balance should be 50 + (-80 - (-50)) = 50 - 30 = 20
+        var finalAccount = await context.Accounts.FindAsync(account.Id);
+        Assert.NotNull(finalAccount);
+        Assert.Equal(20.00m, finalAccount.Balance);
+    }
+
+    [Fact]
+    public async Task WhenUpdatingExpenseToLowerAmount_ThenBalanceIncreasesByDifference()
+    {
+        // Arrange - Account with 100$, existing expense of -50$
+        using var context = GetInMemoryDbContext();
+        var accountRepository = new AccountRepository(context, GetMockAccountLogger().Object);
+        var transactionRepository = new TransactionRepository(context, GetMockTransactionLogger().Object, accountRepository);
+        
+        var account = await CreateTestAccount(context, _testUserId, initialBalance: 100.00m);
+        var category = await CreateTestCategory(context, _testUserId);
+        
+        var transactionId = Guid.NewGuid();
+        var transaction = new Transaction
+        {
+            Id = transactionId,
+            AccountId = account.Id,
+            Amount = -50.00m, // Expense of 50
+            Timestamp = DateTime.UtcNow,
+            CategoryId = category.Id,
+            Notes = "Original expense"
+        };
+        await transactionRepository.CreateAsync(transaction, CancellationToken.None);
+
+        // Verify balance after creating -50$ expense: 100 - 50 = 50
+        var accountAfterCreate = await context.Accounts.FindAsync(account.Id);
+        Assert.Equal(50.00m, accountAfterCreate!.Balance);
+
+        // Act - Update expense from -50$ to -40$ (spending 10$ less)
+        var updatedTransaction = new Transaction
+        {
+            Id = transactionId,
+            AccountId = account.Id,
+            Amount = -40.00m, // Expense of 40
+            Timestamp = DateTime.UtcNow,
+            CategoryId = category.Id,
+            Notes = "Updated expense"
+        };
+        await transactionRepository.UpdateAsync(updatedTransaction, _testUserId, CancellationToken.None);
+
+        // Assert - Balance should be 50 + (-40 - (-50)) = 50 + 10 = 60
+        var finalAccount = await context.Accounts.FindAsync(account.Id);
+        Assert.NotNull(finalAccount);
+        Assert.Equal(60.00m, finalAccount.Balance);
     }
 
     [Fact]
